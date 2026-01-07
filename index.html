@@ -3,187 +3,79 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hockey Timeline Logger (MVP)</title>
+  <title>Hockey Timeline Logger + Rink (Single File)</title>
   <style>
-    :root {
-      --bg: #0b0f14;
-      --panel: #111827;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --btn: #1f2937;
-      --btnActive: #374151;
-      --danger: #ef4444;
-      --ok: #22c55e;
+    :root{
+      --bg:#0b0f14; --panel:#111827; --text:#e5e7eb; --muted:#9ca3af;
+      --btn:#1f2937; --btnActive:#374151; --border:#1f2937;
     }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-    .app {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    header {
-      padding: 12px 12px 8px;
-      background: linear-gradient(to bottom, #0b0f14, #0b0f14cc);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      border-bottom: 1px solid #1f2937;
-    }
-    .scoreRow {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .teams {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .teamLine {
-      display: flex;
-      gap: 8px;
-      align-items: baseline;
-    }
-    .teamName { font-weight: 650; }
-    .teamScore { color: var(--muted); }
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);}
+    .app{min-height:100vh;display:flex;flex-direction:column;}
 
-    .clockRow {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+    header{
+      padding:12px 12px 8px;
+      position:sticky;top:0;z-index:10;
+      background:linear-gradient(to bottom,#0b0f14,#0b0f14cc);
+      border-bottom:1px solid var(--border);
     }
-    .clock {
-      font-size: 28px;
-      font-weight: 750;
-      letter-spacing: 0.5px;
-    }
-    .period {
-      color: var(--muted);
-      font-weight: 600;
-      margin-right: 10px;
-    }
-    .controls {
-      display: flex;
-      gap: 8px;
-    }
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 10px 12px;
-      background: var(--btn);
-      color: var(--text);
-      font-weight: 650;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-    button:active { background: var(--btnActive); }
-    button.small { padding: 8px 10px; border-radius: 10px; font-weight: 650; }
-    button.danger { background: #3b0d0d; color: #fecaca; }
-    button.ok { background: #0f2a18; color: #bbf7d0; }
+    .scoreRow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+    .teams{display:flex;flex-direction:column;gap:2px;}
+    .teamLine{display:flex;gap:8px;align-items:baseline;}
+    .teamName{font-weight:750;}
+    .teamScore{color:var(--muted);font-weight:700;}
+    .clockRow{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+    .clock{font-size:28px;font-weight:850;letter-spacing:0.5px;}
+    .period{color:var(--muted);font-weight:700;margin-right:10px;}
 
-    main {
-      flex: 1;
-      padding: 10px 12px 140px; /* leave room for sticky grid */
+    button{
+      border:0;border-radius:12px;padding:10px 12px;background:var(--btn);color:var(--text);
+      font-weight:750;cursor:pointer;touch-action:manipulation;
     }
-    .sectionTitle {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      margin: 10px 0 6px;
-      text-transform: uppercase;
-    }
-    .events {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .event {
-      background: var(--panel);
-      border: 1px solid #1f2937;
-      border-radius: 14px;
-      padding: 10px 12px;
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .eventLeft {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .eventTop {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .badge {
-      font-size: 12px;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: #0b1220;
-      border: 1px solid #1f2937;
-      color: var(--muted);
-    }
-    .evtLabel { font-weight: 750; }
-    .evtMeta { font-size: 12px; color: var(--muted); }
+    button:active{background:var(--btnActive);}
+    button.small{padding:8px 10px;border-radius:10px;font-weight:750;}
 
-    .stickyGrid {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      padding: 10px 12px 14px;
-      background: linear-gradient(to top, #0b0f14, #0b0f14cc);
-      border-top: 1px solid #1f2937;
-      z-index: 20;
+    main{flex:1;padding:10px 12px 154px;} /* extra bottom padding for sticky grid */
+    .sectionTitle{font-size:13px;color:var(--muted);font-weight:800;letter-spacing:.4px;margin:10px 0 6px;text-transform:uppercase;}
+    .events{display:flex;flex-direction:column;gap:8px;}
+    .event{
+      background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px 12px;
+      display:flex;justify-content:space-between;gap:8px;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
+    .eventLeft{display:flex;flex-direction:column;gap:2px;}
+    .eventTop{display:flex;align-items:center;gap:8px;}
+    .badge{font-size:12px;font-weight:900;padding:3px 8px;border-radius:999px;background:#0b1220;border:1px solid var(--border);color:var(--muted);}
+    .evtLabel{font-weight:850;}
+    .evtMeta{font-size:12px;color:var(--muted);}
+
+    /* Rink */
+    #rinkWrap{padding:6px 0 8px;}
+    #rink{
+      width:100%;height:auto;border-radius:16px;background:#0b1220;border:1px solid var(--border);
+      touch-action:manipulation;
     }
-    .grid button {
-      padding: 16px 12px;
-      border-radius: 16px;
-      font-size: 15px;
-      font-weight: 800;
+    #rinkHint{color:var(--muted);font-size:12px;margin-top:6px;}
+
+    /* Sticky tap grid */
+    .stickyGrid{
+      position:fixed;left:0;right:0;bottom:0;
+      padding:10px 12px 14px;
+      background:linear-gradient(to top,#0b0f14,#0b0f14cc);
+      border-top:1px solid var(--border);
+      z-index:20;
     }
-    .hintRow {
-      margin-top: 8px;
-      display: flex;
-      justify-content: space-between;
-      color: var(--muted);
-      font-size: 12px;
-    }
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+    .grid button{padding:16px 12px;border-radius:16px;font-size:15px;font-weight:900;}
+    .hintRow{margin-top:8px;display:flex;justify-content:space-between;color:var(--muted);font-size:12px;gap:10px;}
+    .hintRow span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
     /* Toast */
-    .toast {
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: 120px;
-      padding: 12px 12px;
-      border-radius: 14px;
-      background: #0b1220;
-      border: 1px solid #1f2937;
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      z-index: 30;
+    .toast{
+      position:fixed;left:12px;right:12px;bottom:128px;
+      padding:12px;border-radius:14px;background:#0b1220;border:1px solid var(--border);
+      display:none;align-items:center;justify-content:space-between;gap:8px;z-index:30;
     }
-    .toast.show { display: flex; }
-    .toast .msg { font-weight: 650; color: var(--text); }
+    .toast.show{display:flex;}
+    .toast .msg{font-weight:750;color:var(--text);}
   </style>
 </head>
 <body>
@@ -194,7 +86,7 @@
         <div class="teamLine"><span class="teamName" id="homeName">Home</span><span class="teamScore" id="homeScore">0</span></div>
         <div class="teamLine"><span class="teamName" id="awayName">Away</span><span class="teamScore" id="awayScore">0</span></div>
       </div>
-      <div>
+      <div style="display:flex;gap:8px;">
         <button class="small" id="resetBtn">Reset</button>
       </div>
     </div>
@@ -204,22 +96,34 @@
         <span class="period" id="periodLabel">P1</span>
         <span class="clock" id="clockLabel">20:00</span>
       </div>
-      <div class="controls">
-        <button class="small ok" id="startStopBtn">Start</button>
+      <div style="display:flex;gap:8px;">
+        <button class="small" id="startStopBtn">Start</button>
         <button class="small" id="nextPeriodBtn">Next</button>
-        <button class="small danger" id="undoBtn">Undo</button>
+        <button class="small" id="undoBtn">Undo</button>
       </div>
     </div>
   </header>
 
   <main>
+    <div id="rinkWrap">
+      <svg id="rink" viewBox="0 0 200 100" aria-label="Ice rink (tap to place location)">
+        <!-- simple rink -->
+        <rect x="5" y="5" width="190" height="90" rx="18" ry="18" fill="none" stroke="#334155" stroke-width="2"/>
+        <line x1="100" y1="5" x2="100" y2="95" stroke="#334155" stroke-width="2"/>
+        <circle cx="100" cy="50" r="12" fill="none" stroke="#334155" stroke-width="2"/>
+        <!-- marker layer -->
+        <g id="markers"></g>
+      </svg>
+      <div id="rinkHint"></div>
+    </div>
+
     <div class="sectionTitle">Recent events</div>
     <div class="events" id="eventsList"></div>
   </main>
 
   <div class="toast" id="toast">
     <div class="msg" id="toastMsg">Event logged</div>
-    <button class="small danger" id="toastUndo">Undo</button>
+    <button class="small" id="toastUndo">Undo</button>
   </div>
 
   <div class="stickyGrid">
@@ -238,14 +142,14 @@
     </div>
     <div class="hintRow">
       <span id="possessionHint">Possession: Home</span>
-      <span>Tap to log • Edit later</span>
+      <span id="locationHint">Tap goal/shot/save/hit then optionally tap rink</span>
     </div>
   </div>
 </div>
 
 <script>
   // ---------- State ----------
-  const STORAGE_KEY = "hockey_timeline_mvp_v1";
+  const STORAGE_KEY = "hockey_timeline_rink_v1";
 
   const state = {
     game: {
@@ -253,59 +157,59 @@
       away: { name: "Away", score: 0 },
     },
     clock: {
-      period: 1,          // 1..3, 4=OT, 5=SO (optional)
+      period: 1,
       running: false,
-      secondsLeft: 20 * 60, // 20:00
+      secondsLeft: 20 * 60,
       lastTickMs: null
     },
-    currentPossession: "home", // toggled by POS
+    currentPossession: "home",
+    pendingLocationForEventId: null,
     events: [] // newest first
   };
 
   // ---------- Helpers ----------
   const $ = (id) => document.getElementById(id);
-
-  function pad2(n) { return String(n).padStart(2, "0"); }
-
-  function formatClock(secondsLeft) {
-    const m = Math.floor(secondsLeft / 60);
-    const s = secondsLeft % 60;
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function formatClock(sec){
+    const m = Math.floor(sec/60);
+    const s = sec % 60;
     return `${pad2(m)}:${pad2(s)}`;
   }
-
-  function periodLabel(p) {
-    if (p === 4) return "OT";
-    if (p === 5) return "SO";
+  function periodLabel(p){
+    if (p===4) return "OT";
+    if (p===5) return "SO";
     return `P${p}`;
   }
-
-  function nowGameTimeStamp() {
-    // Timestamp based on period label + time remaining
-    return {
-      period: state.clock.period,
-      secondsLeft: state.clock.secondsLeft
-    };
+  function nowStamp(){
+    return { period: state.clock.period, secondsLeft: state.clock.secondsLeft };
   }
-
-  function saveState() {
+  function saveState(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
-
-  function loadState() {
+  function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
-    try {
+    try{
       const parsed = JSON.parse(raw);
-      // shallow merge to keep defaults if missing
       Object.assign(state.game, parsed.game ?? {});
       Object.assign(state.clock, parsed.clock ?? {});
       state.currentPossession = parsed.currentPossession ?? state.currentPossession;
+      state.pendingLocationForEventId = parsed.pendingLocationForEventId ?? null;
       state.events = parsed.events ?? [];
-    } catch {}
+    }catch{}
   }
 
-  // ---------- UI Render ----------
-  function renderHeader() {
+  // ---------- Toast ----------
+  let toastTimer = null;
+  function showToast(message){
+    $("toastMsg").textContent = message;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> $("toast").classList.remove("show"), 3500);
+  }
+
+  // ---------- Header render ----------
+  function renderHeader(){
     $("homeName").textContent = state.game.home.name;
     $("awayName").textContent = state.game.away.name;
     $("homeScore").textContent = state.game.home.score;
@@ -318,6 +222,7 @@
     $("possessionHint").textContent = `Possession: ${state.currentPossession === "home" ? "Home" : "Away"}`;
   }
 
+  // ---------- Event rendering ----------
   const TYPE_META = {
     goal: { label: "GOAL", badge: "GOAL" },
     penalty: { label: "PENALTY", badge: "PEN" },
@@ -330,14 +235,15 @@
     possession_change: { label: "POSSESSION CHANGE", badge: "POS" }
   };
 
-  function renderEvents() {
+  function renderEvents(){
     const list = $("eventsList");
     list.innerHTML = "";
-    const max = 12;
+    const max = 14;
     state.events.slice(0, max).forEach((evt) => {
       const meta = TYPE_META[evt.type] ?? { label: evt.type, badge: "EVT" };
       const t = `${periodLabel(evt.period)} ${formatClock(evt.secondsLeft)}`;
       const teamTxt = evt.team ? (evt.team === "home" ? "Home" : "Away") : "—";
+      const locTxt = evt.location ? ` • loc` : "";
 
       const el = document.createElement("div");
       el.className = "event";
@@ -347,37 +253,105 @@
             <span class="badge">${meta.badge}</span>
             <span class="evtLabel">${meta.label}</span>
           </div>
-          <div class="evtMeta">${t} • ${teamTxt}</div>
+          <div class="evtMeta">${t} • ${teamTxt}${locTxt}</div>
         </div>
         <div class="evtMeta">#${evt.id.slice(-4)}</div>
       `;
 
-      // Later: tap to edit details
+      // Edit-later (minimal): tap event to arm location placement
       el.addEventListener("click", () => {
-        alert("Editing UI comes later. For MVP, logging is the focus.");
+        state.pendingLocationForEventId = evt.id;
+        saveState();
+        showRinkHint(`Tap rink to set/move location for ${meta.badge} (optional)`);
       });
 
       list.appendChild(el);
     });
   }
 
-  let toastTimer = null;
-  function showToast(message) {
-    $("toastMsg").textContent = message;
-    $("toast").classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => $("toast").classList.remove("show"), 3500);
+  // ---------- Rink + markers ----------
+  const rink = $("rink");
+  const rinkHint = $("rinkHint");
+
+  function showRinkHint(msg){
+    rinkHint.textContent = msg || "";
+    if (!msg) return;
+    setTimeout(() => {
+      if (rinkHint.textContent === msg) rinkHint.textContent = "";
+    }, 3500);
   }
 
-  // ---------- Clock Loop ----------
-  function tick() {
+  function markerStroke(type){
+    // no custom colors required; subtle differentiation by radius only for MVP
+    return "#e5e7eb";
+  }
+  function markerRadius(type){
+    if (type === "goal") return 3.6;
+    if (type === "possession_change") return 2.0;
+    return 2.8;
+  }
+
+  function renderMarkers(){
+    const g = $("markers");
+    g.innerHTML = "";
+
+    // Draw oldest-to-newest so newest markers sit on top
+    const ordered = [...state.events].reverse();
+
+    for (const evt of ordered){
+      if (!evt.location) continue;
+
+      const cx = evt.location.x * 200;
+      const cy = evt.location.y * 100;
+
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", cx);
+      c.setAttribute("cy", cy);
+      c.setAttribute("r", markerRadius(evt.type));
+      c.setAttribute("fill", "none");
+      c.setAttribute("stroke", markerStroke(evt.type));
+      c.setAttribute("stroke-width", "2");
+      c.style.cursor = "pointer";
+
+      c.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showToast(`${(TYPE_META[evt.type]?.label ?? evt.type).toUpperCase()} • ${periodLabel(evt.period)} ${formatClock(evt.secondsLeft)}`);
+      });
+
+      g.appendChild(c);
+    }
+  }
+
+  rink.addEventListener("click", (e) => {
+    const id = state.pendingLocationForEventId;
+    if (!id) return;
+
+    const rect = rink.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;  // 0..1
+    const y = (e.clientY - rect.top) / rect.height; // 0..1
+
+    const evt = state.events.find(ev => ev.id === id);
+    if (!evt) return;
+
+    evt.location = { x, y };
+    state.pendingLocationForEventId = null;
+
+    saveState();
+    renderMarkers();
+    renderEvents();
+    showRinkHint("Location saved");
+    showToast("Location saved • Undo if needed");
+  });
+
+  // ---------- Clock loop ----------
+  function tick(){
     if (!state.clock.running) return;
 
     const now = Date.now();
     if (state.clock.lastTickMs == null) state.clock.lastTickMs = now;
 
     const deltaMs = now - state.clock.lastTickMs;
-    if (deltaMs >= 1000) {
+    if (deltaMs >= 1000){
       const steps = Math.floor(deltaMs / 1000);
       state.clock.secondsLeft = Math.max(0, state.clock.secondsLeft - steps);
       state.clock.lastTickMs += steps * 1000;
@@ -385,8 +359,9 @@
       renderHeader();
       saveState();
 
-      if (state.clock.secondsLeft === 0) {
+      if (state.clock.secondsLeft === 0){
         state.clock.running = false;
+        state.clock.lastTickMs = null;
         renderHeader();
         saveState();
         showToast("Period ended");
@@ -395,123 +370,148 @@
   }
   setInterval(tick, 120);
 
-  // ---------- Event Logging ----------
-  function makeId() {
+  // ---------- Event logging ----------
+  function makeId(){
     return "evt_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
   }
 
-  function logEvent(type) {
-    // Determine team behavior
+  function armLocationIfNeeded(type, evtId){
+    const needsLocation = ["goal", "sog", "save", "hit"].includes(type);
+    if (needsLocation){
+      state.pendingLocationForEventId = evtId;
+      saveState();
+      showRinkHint(`Tap rink to place ${type.toUpperCase()} (optional)`);
+    } else {
+      state.pendingLocationForEventId = null;
+      saveState();
+      showRinkHint("");
+    }
+  }
+
+  function logEvent(type){
     let team = null;
 
-    if (type === "possession_change") {
-      // Toggle possession and set team to the NEW possessor
+    if (type === "possession_change"){
+      // toggle possession; event belongs to new possessor
       state.currentPossession = (state.currentPossession === "home") ? "away" : "home";
       team = state.currentPossession;
     } else {
-      // Default: attribute to current possession team (fast + reasonable)
+      // default: attribute to current possession (fast, consistent)
       team = state.currentPossession;
     }
 
-    // Special cases: goal increments score (optional MVP behavior)
-    if (type === "goal") {
+    // optional: auto score increment on GOAL
+    if (type === "goal"){
       if (team === "home") state.game.home.score += 1;
-      else if (team === "away") state.game.away.score += 1;
+      if (team === "away") state.game.away.score += 1;
     }
 
-    const t = nowGameTimeStamp();
+    const t = nowStamp();
     const evt = {
       id: makeId(),
       type,
       team,
       period: t.period,
       secondsLeft: t.secondsLeft,
+      location: null,
       createdAt: Date.now()
     };
 
     state.events.unshift(evt);
     saveState();
+
     renderHeader();
     renderEvents();
+    renderMarkers();
+
+    armLocationIfNeeded(type, evt.id);
 
     const label = TYPE_META[type]?.label ?? type;
     showToast(`${label} logged • Undo?`);
   }
 
-  function undoLastEvent() {
+  function undoLastEvent(){
     const evt = state.events.shift();
     if (!evt) return;
 
-    // Roll back goal score if needed
-    if (evt.type === "goal") {
+    // rollback score
+    if (evt.type === "goal"){
       if (evt.team === "home") state.game.home.score = Math.max(0, state.game.home.score - 1);
       if (evt.team === "away") state.game.away.score = Math.max(0, state.game.away.score - 1);
     }
 
-    // Roll back possession toggle if needed
-    if (evt.type === "possession_change") {
+    // rollback possession toggle
+    if (evt.type === "possession_change"){
       state.currentPossession = (state.currentPossession === "home") ? "away" : "home";
+    }
+
+    // if we were arming location for that event, cancel it
+    if (state.pendingLocationForEventId === evt.id){
+      state.pendingLocationForEventId = null;
+      showRinkHint("");
     }
 
     saveState();
     renderHeader();
     renderEvents();
+    renderMarkers();
     showToast("Undid last event");
   }
 
   // ---------- Wiring ----------
-  function bindUI() {
-    // Tap grid buttons
-    document.querySelectorAll(".grid button").forEach((btn) => {
-      btn.addEventListener("click", () => {
+  function bindUI(){
+    document.querySelectorAll(".grid button").forEach((btn)=>{
+      btn.addEventListener("click", ()=>{
         const type = btn.getAttribute("data-type");
         logEvent(type);
       });
     });
 
-    $("startStopBtn").addEventListener("click", () => {
+    $("startStopBtn").addEventListener("click", ()=>{
       state.clock.running = !state.clock.running;
       state.clock.lastTickMs = Date.now();
       saveState();
       renderHeader();
     });
 
-    $("nextPeriodBtn").addEventListener("click", () => {
+    $("nextPeriodBtn").addEventListener("click", ()=>{
       state.clock.period = Math.min(5, state.clock.period + 1);
-      state.clock.secondsLeft = (state.clock.period === 5) ? 0 : 20 * 60; // simple
+      state.clock.secondsLeft = (state.clock.period === 5) ? 0 : 20 * 60;
       state.clock.running = false;
       state.clock.lastTickMs = null;
+      state.pendingLocationForEventId = null;
       saveState();
       renderHeader();
+      showRinkHint(`Now ${periodLabel(state.clock.period)}`);
       showToast(`Now ${periodLabel(state.clock.period)}`);
     });
 
     $("undoBtn").addEventListener("click", undoLastEvent);
 
-    $("toastUndo").addEventListener("click", () => {
+    $("toastUndo").addEventListener("click", ()=>{
       $("toast").classList.remove("show");
       undoLastEvent();
     });
 
-    $("resetBtn").addEventListener("click", () => {
+    $("resetBtn").addEventListener("click", ()=>{
       if (!confirm("Reset game + clear events?")) return;
       localStorage.removeItem(STORAGE_KEY);
       location.reload();
     });
 
-    // Optional: keyboard hotkeys for desktop
-    window.addEventListener("keydown", (e) => {
-      if (e.target && ["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
-      const key = e.key.toLowerCase();
-      if (key === "g") logEvent("goal");
-      if (key === "p") logEvent("penalty");
-      if (key === "s") logEvent("sog");
-      if (key === "v") logEvent("save");
-      if (key === "h") logEvent("hit");
-      if (key === "n") logEvent("note");
-      if (key === "c") logEvent("possession_change");
-      if (key === "z") undoLastEvent();
-      if (key === " ") { e.preventDefault(); $("startStopBtn").click(); }
+    // Desktop hotkeys (optional)
+    window.addEventListener("keydown", (e)=>{
+      if (e.target && ["INPUT","TEXTAREA"].includes(e.target.tagName)) return;
+      const k = e.key.toLowerCase();
+      if (k === "g") logEvent("goal");
+      if (k === "p") logEvent("penalty");
+      if (k === "s") logEvent("sog");
+      if (k === "v") logEvent("save");
+      if (k === "h") logEvent("hit");
+      if (k === "n") logEvent("note");
+      if (k === "c") logEvent("possession_change");
+      if (k === "z") undoLastEvent();
+      if (k === " ") { e.preventDefault(); $("startStopBtn").click(); }
     });
   }
 
@@ -519,6 +519,7 @@
   loadState();
   renderHeader();
   renderEvents();
+  renderMarkers();
   bindUI();
 </script>
 </body>
