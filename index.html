@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hockey Timeline Logger + Rink (Single File)</title>
+  <title>Hockey Timeline Logger + Detailed Rink (Single File)</title>
   <style>
     :root{
       --bg:#0b0f14; --panel:#111827; --text:#e5e7eb; --muted:#9ca3af;
@@ -34,7 +34,7 @@
     button:active{background:var(--btnActive);}
     button.small{padding:8px 10px;border-radius:10px;font-weight:750;}
 
-    main{flex:1;padding:10px 12px 154px;} /* extra bottom padding for sticky grid */
+    main{flex:1;padding:10px 12px 154px;}
     .sectionTitle{font-size:13px;color:var(--muted);font-weight:800;letter-spacing:.4px;margin:10px 0 6px;text-transform:uppercase;}
     .events{display:flex;flex-direction:column;gap:8px;}
     .event{
@@ -106,12 +106,88 @@
 
   <main>
     <div id="rinkWrap">
+      <!-- Detailed rink SVG (stylized). Coordinates: viewBox 0..200 x 0..100 -->
       <svg id="rink" viewBox="0 0 200 100" aria-label="Ice rink (tap to place location)">
-        <!-- simple rink -->
-        <rect x="5" y="5" width="190" height="90" rx="18" ry="18" fill="none" stroke="#334155" stroke-width="2"/>
-        <line x1="100" y1="5" x2="100" y2="95" stroke="#334155" stroke-width="2"/>
-        <circle cx="100" cy="50" r="12" fill="none" stroke="#334155" stroke-width="2"/>
-        <!-- marker layer -->
+        <!-- Colors (explicit, not CSS vars, to avoid any browser/SVG var quirks) -->
+        <!-- boards/lines -->
+        <!-- Outer boards -->
+        <rect x="5" y="5" width="190" height="90" rx="18" ry="18"
+              fill="none" stroke="#e5e7eb" stroke-width="2"/>
+
+        <!-- Rink fill (very subtle) -->
+        <rect x="7" y="7" width="186" height="86" rx="16" ry="16"
+              fill="rgba(255,255,255,0.02)" stroke="none"/>
+
+        <!-- Goal lines (near each end) -->
+        <line x1="20"  y1="6" x2="20"  y2="94" stroke="#fb7185" stroke-width="2"/>
+        <line x1="180" y1="6" x2="180" y2="94" stroke="#fb7185" stroke-width="2"/>
+
+        <!-- Blue lines -->
+        <line x1="65"  y1="6" x2="65"  y2="94" stroke="#60a5fa" stroke-width="4"/>
+        <line x1="135" y1="6" x2="135" y2="94" stroke="#60a5fa" stroke-width="4"/>
+
+        <!-- Center red line -->
+        <line x1="100" y1="6" x2="100" y2="94" stroke="#ef4444" stroke-width="3"/>
+
+        <!-- Center circle + dot -->
+        <circle cx="100" cy="50" r="14" fill="none" stroke="#ef4444" stroke-width="2"/>
+        <circle cx="100" cy="50" r="1.8" fill="#ef4444"/>
+
+        <!-- Neutral zone faceoff dots (top/bottom at center) -->
+        <circle cx="100" cy="25" r="1.4" fill="#e5e7eb" opacity="0.75"/>
+        <circle cx="100" cy="75" r="1.4" fill="#e5e7eb" opacity="0.75"/>
+
+        <!-- End-zone faceoff circles (approximate) -->
+        <circle cx="52"  cy="30" r="10" fill="none" stroke="#ef4444" stroke-width="2" opacity="0.9"/>
+        <circle cx="52"  cy="70" r="10" fill="none" stroke="#ef4444" stroke-width="2" opacity="0.9"/>
+        <circle cx="148" cy="30" r="10" fill="none" stroke="#ef4444" stroke-width="2" opacity="0.9"/>
+        <circle cx="148" cy="70" r="10" fill="none" stroke="#ef4444" stroke-width="2" opacity="0.9"/>
+
+        <!-- End-zone faceoff dots -->
+        <circle cx="52"  cy="30" r="1.6" fill="#ef4444"/>
+        <circle cx="52"  cy="70" r="1.6" fill="#ef4444"/>
+        <circle cx="148" cy="30" r="1.6" fill="#ef4444"/>
+        <circle cx="148" cy="70" r="1.6" fill="#ef4444"/>
+
+        <!-- Small "hash marks" near end-zone circles (stylized) -->
+        <g stroke="#ef4444" stroke-width="1.6" opacity="0.75">
+          <!-- left top circle hashes -->
+          <line x1="41" y1="26" x2="45" y2="26"/>
+          <line x1="41" y1="34" x2="45" y2="34"/>
+          <line x1="59" y1="26" x2="63" y2="26"/>
+          <line x1="59" y1="34" x2="63" y2="34"/>
+          <!-- left bottom circle hashes -->
+          <line x1="41" y1="66" x2="45" y2="66"/>
+          <line x1="41" y1="74" x2="45" y2="74"/>
+          <line x1="59" y1="66" x2="63" y2="66"/>
+          <line x1="59" y1="74" x2="63" y2="74"/>
+          <!-- right top circle hashes -->
+          <line x1="137" y1="26" x2="141" y2="26"/>
+          <line x1="137" y1="34" x2="141" y2="34"/>
+          <line x1="155" y1="26" x2="159" y2="26"/>
+          <line x1="155" y1="34" x2="159" y2="34"/>
+          <!-- right bottom circle hashes -->
+          <line x1="137" y1="66" x2="141" y2="66"/>
+          <line x1="137" y1="74" x2="141" y2="74"/>
+          <line x1="155" y1="66" x2="159" y2="66"/>
+          <line x1="155" y1="74" x2="159" y2="74"/>
+        </g>
+
+        <!-- Goal creases (both ends, stylized) -->
+        <!-- Left crease -->
+        <path d="M 22 43 A 8 8 0 0 1 22 57" fill="none" stroke="#60a5fa" stroke-width="3"/>
+        <line x1="22" y1="43" x2="31" y2="43" stroke="#60a5fa" stroke-width="3"/>
+        <line x1="22" y1="57" x2="31" y2="57" stroke="#60a5fa" stroke-width="3"/>
+        <!-- Right crease -->
+        <path d="M 178 43 A 8 8 0 0 0 178 57" fill="none" stroke="#60a5fa" stroke-width="3"/>
+        <line x1="169" y1="43" x2="178" y2="43" stroke="#60a5fa" stroke-width="3"/>
+        <line x1="169" y1="57" x2="178" y2="57" stroke="#60a5fa" stroke-width="3"/>
+
+        <!-- Goal dots (in front of crease, approximate) -->
+        <circle cx="30"  cy="50" r="1.4" fill="#ef4444" opacity="0.9"/>
+        <circle cx="170" cy="50" r="1.4" fill="#ef4444" opacity="0.9"/>
+
+        <!-- Marker layer (drawn on top) -->
         <g id="markers"></g>
       </svg>
       <div id="rinkHint"></div>
@@ -148,58 +224,36 @@
 </div>
 
 <script>
-  // ---------- State ----------
-  const STORAGE_KEY = "hockey_timeline_rink_v1";
+  const STORAGE_KEY = "hockey_timeline_rink_v3_detailed";
 
   const state = {
-    game: {
-      home: { name: "Home", score: 0 },
-      away: { name: "Away", score: 0 },
-    },
-    clock: {
-      period: 1,
-      running: false,
-      secondsLeft: 20 * 60,
-      lastTickMs: null
-    },
+    game: { home: { name: "Home", score: 0 }, away: { name: "Away", score: 0 } },
+    clock: { period: 1, running: false, secondsLeft: 20*60, lastTickMs: null },
     currentPossession: "home",
     pendingLocationForEventId: null,
-    events: [] // newest first
+    events: []
   };
 
-  // ---------- Helpers ----------
   const $ = (id) => document.getElementById(id);
   function pad2(n){ return String(n).padStart(2,"0"); }
-  function formatClock(sec){
-    const m = Math.floor(sec/60);
-    const s = sec % 60;
-    return `${pad2(m)}:${pad2(s)}`;
-  }
-  function periodLabel(p){
-    if (p===4) return "OT";
-    if (p===5) return "SO";
-    return `P${p}`;
-  }
-  function nowStamp(){
-    return { period: state.clock.period, secondsLeft: state.clock.secondsLeft };
-  }
-  function saveState(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
+  function formatClock(sec){ return `${pad2(Math.floor(sec/60))}:${pad2(sec%60)}`; }
+  function periodLabel(p){ return p===4 ? "OT" : p===5 ? "SO" : `P${p}`; }
+  function nowStamp(){ return { period: state.clock.period, secondsLeft: state.clock.secondsLeft }; }
+
+  function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     try{
-      const parsed = JSON.parse(raw);
-      Object.assign(state.game, parsed.game ?? {});
-      Object.assign(state.clock, parsed.clock ?? {});
-      state.currentPossession = parsed.currentPossession ?? state.currentPossession;
-      state.pendingLocationForEventId = parsed.pendingLocationForEventId ?? null;
-      state.events = parsed.events ?? [];
+      const p = JSON.parse(raw);
+      Object.assign(state.game, p.game ?? {});
+      Object.assign(state.clock, p.clock ?? {});
+      state.currentPossession = p.currentPossession ?? state.currentPossession;
+      state.pendingLocationForEventId = p.pendingLocationForEventId ?? null;
+      state.events = p.events ?? [];
     }catch{}
   }
 
-  // ---------- Toast ----------
   let toastTimer = null;
   function showToast(message){
     $("toastMsg").textContent = message;
@@ -208,42 +262,37 @@
     toastTimer = setTimeout(()=> $("toast").classList.remove("show"), 3500);
   }
 
-  // ---------- Header render ----------
   function renderHeader(){
     $("homeName").textContent = state.game.home.name;
     $("awayName").textContent = state.game.away.name;
     $("homeScore").textContent = state.game.home.score;
     $("awayScore").textContent = state.game.away.score;
-
     $("periodLabel").textContent = periodLabel(state.clock.period);
     $("clockLabel").textContent = formatClock(state.clock.secondsLeft);
     $("startStopBtn").textContent = state.clock.running ? "Pause" : "Start";
-
     $("possessionHint").textContent = `Possession: ${state.currentPossession === "home" ? "Home" : "Away"}`;
   }
 
-  // ---------- Event rendering ----------
   const TYPE_META = {
-    goal: { label: "GOAL", badge: "GOAL" },
-    penalty: { label: "PENALTY", badge: "PEN" },
-    sog: { label: "SHOT ON GOAL", badge: "SOG" },
-    save: { label: "SAVE", badge: "SV" },
-    hit: { label: "HIT", badge: "HIT" },
-    icing: { label: "ICING", badge: "ICE" },
-    timeout: { label: "TIMEOUT", badge: "TO" },
-    note: { label: "NOTE", badge: "NOTE" },
-    possession_change: { label: "POSSESSION CHANGE", badge: "POS" }
+    goal:{label:"GOAL",badge:"GOAL"},
+    penalty:{label:"PENALTY",badge:"PEN"},
+    sog:{label:"SHOT ON GOAL",badge:"SOG"},
+    save:{label:"SAVE",badge:"SV"},
+    hit:{label:"HIT",badge:"HIT"},
+    icing:{label:"ICING",badge:"ICE"},
+    timeout:{label:"TIMEOUT",badge:"TO"},
+    note:{label:"NOTE",badge:"NOTE"},
+    possession_change:{label:"POSSESSION CHANGE",badge:"POS"}
   };
 
   function renderEvents(){
     const list = $("eventsList");
     list.innerHTML = "";
-    const max = 14;
-    state.events.slice(0, max).forEach((evt) => {
-      const meta = TYPE_META[evt.type] ?? { label: evt.type, badge: "EVT" };
+    state.events.slice(0, 14).forEach((evt)=>{
+      const meta = TYPE_META[evt.type] ?? {label:evt.type,badge:"EVT"};
       const t = `${periodLabel(evt.period)} ${formatClock(evt.secondsLeft)}`;
-      const teamTxt = evt.team ? (evt.team === "home" ? "Home" : "Away") : "—";
-      const locTxt = evt.location ? ` • loc` : "";
+      const teamTxt = evt.team ? (evt.team==="home" ? "Home" : "Away") : "—";
+      const locTxt = evt.location ? " • loc" : "";
 
       const el = document.createElement("div");
       el.className = "event";
@@ -257,34 +306,23 @@
         </div>
         <div class="evtMeta">#${evt.id.slice(-4)}</div>
       `;
-
-      // Edit-later (minimal): tap event to arm location placement
-      el.addEventListener("click", () => {
+      el.addEventListener("click", ()=>{
         state.pendingLocationForEventId = evt.id;
         saveState();
-        showRinkHint(`Tap rink to set/move location for ${meta.badge} (optional)`);
+        showRinkHint(`Tap rink to set/move location for ${meta.badge}`);
       });
-
       list.appendChild(el);
     });
   }
 
-  // ---------- Rink + markers ----------
   const rink = $("rink");
   const rinkHint = $("rinkHint");
-
   function showRinkHint(msg){
     rinkHint.textContent = msg || "";
     if (!msg) return;
-    setTimeout(() => {
-      if (rinkHint.textContent === msg) rinkHint.textContent = "";
-    }, 3500);
+    setTimeout(()=>{ if (rinkHint.textContent === msg) rinkHint.textContent = ""; }, 3500);
   }
 
-  function markerStroke(type){
-    // no custom colors required; subtle differentiation by radius only for MVP
-    return "#e5e7eb";
-  }
   function markerRadius(type){
     if (type === "goal") return 3.6;
     if (type === "possession_change") return 2.0;
@@ -292,43 +330,37 @@
   }
 
   function renderMarkers(){
-    const g = $("markers");
+    const g = document.getElementById("markers");
     g.innerHTML = "";
-
-    // Draw oldest-to-newest so newest markers sit on top
     const ordered = [...state.events].reverse();
-
     for (const evt of ordered){
       if (!evt.location) continue;
-
       const cx = evt.location.x * 200;
       const cy = evt.location.y * 100;
 
-      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
       c.setAttribute("cx", cx);
       c.setAttribute("cy", cy);
       c.setAttribute("r", markerRadius(evt.type));
       c.setAttribute("fill", "none");
-      c.setAttribute("stroke", markerStroke(evt.type));
+      c.setAttribute("stroke", "#e5e7eb");
       c.setAttribute("stroke-width", "2");
       c.style.cursor = "pointer";
-
-      c.addEventListener("click", (e) => {
+      c.addEventListener("click",(e)=>{
         e.stopPropagation();
-        showToast(`${(TYPE_META[evt.type]?.label ?? evt.type).toUpperCase()} • ${periodLabel(evt.period)} ${formatClock(evt.secondsLeft)}`);
+        showToast(`${(TYPE_META[evt.type]?.label ?? evt.type)} • ${periodLabel(evt.period)} ${formatClock(evt.secondsLeft)}`);
       });
-
       g.appendChild(c);
     }
   }
 
-  rink.addEventListener("click", (e) => {
+  rink.addEventListener("click",(e)=>{
     const id = state.pendingLocationForEventId;
     if (!id) return;
 
     const rect = rink.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;  // 0..1
-    const y = (e.clientY - rect.top) / rect.height; // 0..1
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
 
     const evt = state.events.find(ev => ev.id === id);
     if (!evt) return;
@@ -340,19 +372,17 @@
     renderMarkers();
     renderEvents();
     showRinkHint("Location saved");
-    showToast("Location saved • Undo if needed");
+    showToast("Location saved");
   });
 
-  // ---------- Clock loop ----------
   function tick(){
     if (!state.clock.running) return;
-
     const now = Date.now();
     if (state.clock.lastTickMs == null) state.clock.lastTickMs = now;
 
-    const deltaMs = now - state.clock.lastTickMs;
-    if (deltaMs >= 1000){
-      const steps = Math.floor(deltaMs / 1000);
+    const delta = now - state.clock.lastTickMs;
+    if (delta >= 1000){
+      const steps = Math.floor(delta/1000);
       state.clock.secondsLeft = Math.max(0, state.clock.secondsLeft - steps);
       state.clock.lastTickMs += steps * 1000;
 
@@ -370,14 +400,11 @@
   }
   setInterval(tick, 120);
 
-  // ---------- Event logging ----------
-  function makeId(){
-    return "evt_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
-  }
+  function makeId(){ return "evt_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16); }
 
   function armLocationIfNeeded(type, evtId){
-    const needsLocation = ["goal", "sog", "save", "hit"].includes(type);
-    if (needsLocation){
+    const needs = ["goal","sog","save","hit"].includes(type);
+    if (needs){
       state.pendingLocationForEventId = evtId;
       saveState();
       showRinkHint(`Tap rink to place ${type.toUpperCase()} (optional)`);
@@ -392,21 +419,18 @@
     let team = null;
 
     if (type === "possession_change"){
-      // toggle possession; event belongs to new possessor
       state.currentPossession = (state.currentPossession === "home") ? "away" : "home";
       team = state.currentPossession;
     } else {
-      // default: attribute to current possession (fast, consistent)
       team = state.currentPossession;
     }
 
-    // optional: auto score increment on GOAL
     if (type === "goal"){
       if (team === "home") state.game.home.score += 1;
       if (team === "away") state.game.away.score += 1;
     }
 
-    const t = nowStamp();
+    const t = { ...nowStamp() };
     const evt = {
       id: makeId(),
       type,
@@ -425,27 +449,20 @@
     renderMarkers();
 
     armLocationIfNeeded(type, evt.id);
-
-    const label = TYPE_META[type]?.label ?? type;
-    showToast(`${label} logged • Undo?`);
+    showToast(`${TYPE_META[type]?.label ?? type} logged • Undo?`);
   }
 
   function undoLastEvent(){
     const evt = state.events.shift();
     if (!evt) return;
 
-    // rollback score
     if (evt.type === "goal"){
       if (evt.team === "home") state.game.home.score = Math.max(0, state.game.home.score - 1);
       if (evt.team === "away") state.game.away.score = Math.max(0, state.game.away.score - 1);
     }
-
-    // rollback possession toggle
     if (evt.type === "possession_change"){
       state.currentPossession = (state.currentPossession === "home") ? "away" : "home";
     }
-
-    // if we were arming location for that event, cancel it
     if (state.pendingLocationForEventId === evt.id){
       state.pendingLocationForEventId = null;
       showRinkHint("");
@@ -458,13 +475,9 @@
     showToast("Undid last event");
   }
 
-  // ---------- Wiring ----------
   function bindUI(){
     document.querySelectorAll(".grid button").forEach((btn)=>{
-      btn.addEventListener("click", ()=>{
-        const type = btn.getAttribute("data-type");
-        logEvent(type);
-      });
+      btn.addEventListener("click", ()=> logEvent(btn.getAttribute("data-type")));
     });
 
     $("startStopBtn").addEventListener("click", ()=>{
@@ -499,23 +512,22 @@
       location.reload();
     });
 
-    // Desktop hotkeys (optional)
-    window.addEventListener("keydown", (e)=>{
+    // Desktop hotkeys
+    window.addEventListener("keydown",(e)=>{
       if (e.target && ["INPUT","TEXTAREA"].includes(e.target.tagName)) return;
       const k = e.key.toLowerCase();
-      if (k === "g") logEvent("goal");
-      if (k === "p") logEvent("penalty");
-      if (k === "s") logEvent("sog");
-      if (k === "v") logEvent("save");
-      if (k === "h") logEvent("hit");
-      if (k === "n") logEvent("note");
-      if (k === "c") logEvent("possession_change");
-      if (k === "z") undoLastEvent();
-      if (k === " ") { e.preventDefault(); $("startStopBtn").click(); }
+      if (k==="g") logEvent("goal");
+      if (k==="p") logEvent("penalty");
+      if (k==="s") logEvent("sog");
+      if (k==="v") logEvent("save");
+      if (k==="h") logEvent("hit");
+      if (k==="n") logEvent("note");
+      if (k==="c") logEvent("possession_change");
+      if (k==="z") undoLastEvent();
+      if (k===" ") { e.preventDefault(); $("startStopBtn").click(); }
     });
   }
 
-  // ---------- Init ----------
   loadState();
   renderHeader();
   renderEvents();
