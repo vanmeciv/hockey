@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hockey Timeline Logger (MVP)</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --btn: #1f2937;
+      --btnActive: #374151;
+      --danger: #ef4444;
+      --ok: #22c55e;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 12px 12px 8px;
+      background: linear-gradient(to bottom, #0b0f14, #0b0f14cc);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid #1f2937;
+    }
+    .scoreRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .teams {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .teamLine {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .teamName { font-weight: 650; }
+    .teamScore { color: var(--muted); }
+
+    .clockRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .clock {
+      font-size: 28px;
+      font-weight: 750;
+      letter-spacing: 0.5px;
+    }
+    .period {
+      color: var(--muted);
+      font-weight: 600;
+      margin-right: 10px;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: var(--btn);
+      color: var(--text);
+      font-weight: 650;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    button:active { background: var(--btnActive); }
+    button.small { padding: 8px 10px; border-radius: 10px; font-weight: 650; }
+    button.danger { background: #3b0d0d; color: #fecaca; }
+    button.ok { background: #0f2a18; color: #bbf7d0; }
+
+    main {
+      flex: 1;
+      padding: 10px 12px 140px; /* leave room for sticky grid */
+    }
+    .sectionTitle {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin: 10px 0 6px;
+      text-transform: uppercase;
+    }
+    .events {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .event {
+      background: var(--panel);
+      border: 1px solid #1f2937;
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .eventLeft {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .eventTop {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #0b1220;
+      border: 1px solid #1f2937;
+      color: var(--muted);
+    }
+    .evtLabel { font-weight: 750; }
+    .evtMeta { font-size: 12px; color: var(--muted); }
+
+    .stickyGrid {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px 12px 14px;
+      background: linear-gradient(to top, #0b0f14, #0b0f14cc);
+      border-top: 1px solid #1f2937;
+      z-index: 20;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .grid button {
+      padding: 16px 12px;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .hintRow {
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 120px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      background: #0b1220;
+      border: 1px solid #1f2937;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 30;
+    }
+    .toast.show { display: flex; }
+    .toast .msg { font-weight: 650; color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="scoreRow">
+      <div class="teams">
+        <div class="teamLine"><span class="teamName" id="homeName">Home</span><span class="teamScore" id="homeScore">0</span></div>
+        <div class="teamLine"><span class="teamName" id="awayName">Away</span><span class="teamScore" id="awayScore">0</span></div>
+      </div>
+      <div>
+        <button class="small" id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="clockRow">
+      <div>
+        <span class="period" id="periodLabel">P1</span>
+        <span class="clock" id="clockLabel">20:00</span>
+      </div>
+      <div class="controls">
+        <button class="small ok" id="startStopBtn">Start</button>
+        <button class="small" id="nextPeriodBtn">Next</button>
+        <button class="small danger" id="undoBtn">Undo</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="sectionTitle">Recent events</div>
+    <div class="events" id="eventsList"></div>
+  </main>
+
+  <div class="toast" id="toast">
+    <div class="msg" id="toastMsg">Event logged</div>
+    <button class="small danger" id="toastUndo">Undo</button>
+  </div>
+
+  <div class="stickyGrid">
+    <div class="grid">
+      <button data-type="goal">GOAL</button>
+      <button data-type="penalty">PENALTY</button>
+      <button data-type="sog">SOG</button>
+
+      <button data-type="save">SAVE</button>
+      <button data-type="possession_change">POS ⇄</button>
+      <button data-type="hit">HIT</button>
+
+      <button data-type="icing">ICING</button>
+      <button data-type="timeout">TIMEOUT</button>
+      <button data-type="note">NOTE</button>
+    </div>
+    <div class="hintRow">
+      <span id="possessionHint">Possession: Home</span>
+      <span>Tap to log • Edit later</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- State ----------
+  const STORAGE_KEY = "hockey_timeline_mvp_v1";
+
+  const state = {
+    game: {
+      home: { name: "Home", score: 0 },
+      away: { name: "Away", score: 0 },
+    },
+    clock: {
+      period: 1,          // 1..3, 4=OT, 5=SO (optional)
+      running: false,
+      secondsLeft: 20 * 60, // 20:00
+      lastTickMs: null
+    },
+    currentPossession: "home", // toggled by POS
+    events: [] // newest first
+  };
+
+  // ---------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
+
+  function formatClock(secondsLeft) {
+    const m = Math.floor(secondsLeft / 60);
+    const s = secondsLeft % 60;
+    return `${pad2(m)}:${pad2(s)}`;
+  }
+
+  function periodLabel(p) {
+    if (p === 4) return "OT";
+    if (p === 5) return "SO";
+    return `P${p}`;
+  }
+
+  function nowGameTimeStamp() {
+    // Timestamp based on period label + time remaining
+    return {
+      period: state.clock.period,
+      secondsLeft: state.clock.secondsLeft
+    };
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function loadState() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      // shallow merge to keep defaults if missing
+      Object.assign(state.game, parsed.game ?? {});
+      Object.assign(state.clock, parsed.clock ?? {});
+      state.currentPossession = parsed.currentPossession ?? state.currentPossession;
+      state.events = parsed.events ?? [];
+    } catch {}
+  }
+
+  // ---------- UI Render ----------
+  function renderHeader() {
+    $("homeName").textContent = state.game.home.name;
+    $("awayName").textContent = state.game.away.name;
+    $("homeScore").textContent = state.game.home.score;
+    $("awayScore").textContent = state.game.away.score;
+
+    $("periodLabel").textContent = periodLabel(state.clock.period);
+    $("clockLabel").textContent = formatClock(state.clock.secondsLeft);
+    $("startStopBtn").textContent = state.clock.running ? "Pause" : "Start";
+
+    $("possessionHint").textContent = `Possession: ${state.currentPossession === "home" ? "Home" : "Away"}`;
+  }
+
+  const TYPE_META = {
+    goal: { label: "GOAL", badge: "GOAL" },
+    penalty: { label: "PENALTY", badge: "PEN" },
+    sog: { label: "SHOT ON GOAL", badge: "SOG" },
+    save: { label: "SAVE", badge: "SV" },
+    hit: { label: "HIT", badge: "HIT" },
+    icing: { label: "ICING", badge: "ICE" },
+    timeout: { label: "TIMEOUT", badge: "TO" },
+    note: { label: "NOTE", badge: "NOTE" },
+    possession_change: { label: "POSSESSION CHANGE", badge: "POS" }
+  };
+
+  function renderEvents() {
+    const list = $("eventsList");
+    list.innerHTML = "";
+    const max = 12;
+    state.events.slice(0, max).forEach((evt) => {
+      const meta = TYPE_META[evt.type] ?? { label: evt.type, badge: "EVT" };
+      const t = `${periodLabel(evt.period)} ${formatClock(evt.secondsLeft)}`;
+      const teamTxt = evt.team ? (evt.team === "home" ? "Home" : "Away") : "—";
+
+      const el = document.createElement("div");
+      el.className = "event";
+      el.innerHTML = `
+        <div class="eventLeft">
+          <div class="eventTop">
+            <span class="badge">${meta.badge}</span>
+            <span class="evtLabel">${meta.label}</span>
+          </div>
+          <div class="evtMeta">${t} • ${teamTxt}</div>
+        </div>
+        <div class="evtMeta">#${evt.id.slice(-4)}</div>
+      `;
+
+      // Later: tap to edit details
+      el.addEventListener("click", () => {
+        alert("Editing UI comes later. For MVP, logging is the focus.");
+      });
+
+      list.appendChild(el);
+    });
+  }
+
+  let toastTimer = null;
+  function showToast(message) {
+    $("toastMsg").textContent = message;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $("toast").classList.remove("show"), 3500);
+  }
+
+  // ---------- Clock Loop ----------
+  function tick() {
+    if (!state.clock.running) return;
+
+    const now = Date.now();
+    if (state.clock.lastTickMs == null) state.clock.lastTickMs = now;
+
+    const deltaMs = now - state.clock.lastTickMs;
+    if (deltaMs >= 1000) {
+      const steps = Math.floor(deltaMs / 1000);
+      state.clock.secondsLeft = Math.max(0, state.clock.secondsLeft - steps);
+      state.clock.lastTickMs += steps * 1000;
+
+      renderHeader();
+      saveState();
+
+      if (state.clock.secondsLeft === 0) {
+        state.clock.running = false;
+        renderHeader();
+        saveState();
+        showToast("Period ended");
+      }
+    }
+  }
+  setInterval(tick, 120);
+
+  // ---------- Event Logging ----------
+  function makeId() {
+    return "evt_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+  }
+
+  function logEvent(type) {
+    // Determine team behavior
+    let team = null;
+
+    if (type === "possession_change") {
+      // Toggle possession and set team to the NEW possessor
+      state.currentPossession = (state.currentPossession === "home") ? "away" : "home";
+      team = state.currentPossession;
+    } else {
+      // Default: attribute to current possession team (fast + reasonable)
+      team = state.currentPossession;
+    }
+
+    // Special cases: goal increments score (optional MVP behavior)
+    if (type === "goal") {
+      if (team === "home") state.game.home.score += 1;
+      else if (team === "away") state.game.away.score += 1;
+    }
+
+    const t = nowGameTimeStamp();
+    const evt = {
+      id: makeId(),
+      type,
+      team,
+      period: t.period,
+      secondsLeft: t.secondsLeft,
+      createdAt: Date.now()
+    };
+
+    state.events.unshift(evt);
+    saveState();
+    renderHeader();
+    renderEvents();
+
+    const label = TYPE_META[type]?.label ?? type;
+    showToast(`${label} logged • Undo?`);
+  }
+
+  function undoLastEvent() {
+    const evt = state.events.shift();
+    if (!evt) return;
+
+    // Roll back goal score if needed
+    if (evt.type === "goal") {
+      if (evt.team === "home") state.game.home.score = Math.max(0, state.game.home.score - 1);
+      if (evt.team === "away") state.game.away.score = Math.max(0, state.game.away.score - 1);
+    }
+
+    // Roll back possession toggle if needed
+    if (evt.type === "possession_change") {
+      state.currentPossession = (state.currentPossession === "home") ? "away" : "home";
+    }
+
+    saveState();
+    renderHeader();
+    renderEvents();
+    showToast("Undid last event");
+  }
+
+  // ---------- Wiring ----------
+  function bindUI() {
+    // Tap grid buttons
+    document.querySelectorAll(".grid button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const type = btn.getAttribute("data-type");
+        logEvent(type);
+      });
+    });
+
+    $("startStopBtn").addEventListener("click", () => {
+      state.clock.running = !state.clock.running;
+      state.clock.lastTickMs = Date.now();
+      saveState();
+      renderHeader();
+    });
+
+    $("nextPeriodBtn").addEventListener("click", () => {
+      state.clock.period = Math.min(5, state.clock.period + 1);
+      state.clock.secondsLeft = (state.clock.period === 5) ? 0 : 20 * 60; // simple
+      state.clock.running = false;
+      state.clock.lastTickMs = null;
+      saveState();
+      renderHeader();
+      showToast(`Now ${periodLabel(state.clock.period)}`);
+    });
+
+    $("undoBtn").addEventListener("click", undoLastEvent);
+
+    $("toastUndo").addEventListener("click", () => {
+      $("toast").classList.remove("show");
+      undoLastEvent();
+    });
+
+    $("resetBtn").addEventListener("click", () => {
+      if (!confirm("Reset game + clear events?")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    });
+
+    // Optional: keyboard hotkeys for desktop
+    window.addEventListener("keydown", (e) => {
+      if (e.target && ["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
+      const key = e.key.toLowerCase();
+      if (key === "g") logEvent("goal");
+      if (key === "p") logEvent("penalty");
+      if (key === "s") logEvent("sog");
+      if (key === "v") logEvent("save");
+      if (key === "h") logEvent("hit");
+      if (key === "n") logEvent("note");
+      if (key === "c") logEvent("possession_change");
+      if (key === "z") undoLastEvent();
+      if (key === " ") { e.preventDefault(); $("startStopBtn").click(); }
+    });
+  }
+
+  // ---------- Init ----------
+  loadState();
+  renderHeader();
+  renderEvents();
+  bindUI();
+</script>
+</body>
+</html>
