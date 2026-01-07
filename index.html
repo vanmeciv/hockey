@@ -2,113 +2,288 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>NHL Regulation Rink (Feet-Accurate SVG)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NHL Regulation Rink + Event Logger</title>
+
 <style>
-  body { margin:0; background:#0b0f14; display:grid; place-items:center; min-height:100vh; }
-  svg { width:min(1100px, 96vw); height:auto; background:#0b1220; border-radius:18px; }
+  body {
+    margin:0;
+    background:#0b0f14;
+    color:#e5e7eb;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+
+  header {
+    padding:12px;
+    border-bottom:1px solid #1f2937;
+  }
+
+  .row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+  }
+
+  .clock {
+    font-size:28px;
+    font-weight:800;
+  }
+
+  main {
+    padding:12px 12px 150px;
+  }
+
+  svg {
+    width:100%;
+    height:auto;
+    background:#0b1220;
+    border-radius:18px;
+    border:1px solid #1f2937;
+    touch-action:manipulation;
+  }
+
+  .hint {
+    font-size:12px;
+    color:#9ca3af;
+    margin-top:6px;
+  }
+
+  .events {
+    margin-top:12px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .event {
+    background:#111827;
+    border:1px solid #1f2937;
+    border-radius:10px;
+    padding:6px 8px;
+    font-size:14px;
+  }
+
+  .controls {
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    padding:12px;
+    background:#0b0f14;
+    border-top:1px solid #1f2937;
+  }
+
+  .grid {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+  }
+
+  button {
+    background:#1f2937;
+    color:#e5e7eb;
+    border:0;
+    border-radius:10px;
+    padding:12px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  button:active { background:#374151; }
+
+  .toast {
+    position:fixed;
+    left:12px;
+    right:12px;
+    bottom:130px;
+    background:#0b1220;
+    border:1px solid #1f2937;
+    border-radius:12px;
+    padding:10px;
+    font-weight:700;
+    display:none;
+  }
+
+  .toast.show { display:block; }
 </style>
 </head>
+
 <body>
 
-<!--
-  Coordinate system: 1 SVG unit = 1 foot.
-  Rink size: 200 ft (x) by 85 ft (y).
--->
-<svg viewBox="0 0 200 85" aria-label="NHL regulation rink (feet)">
-  <!-- ===== constants (documented here) =====
-    Corner radius: 28'
-    Goal line: 11' from end boards, width 2" = 0.1666667'
-    Blue lines: width 12" = 1', centered 64' from goal lines -> x=75 and x=125
-    Center line: width 12" = 1', centered x=100
-    Center spot: diameter 12" => r=0.5'
-    Center circle: radius 15'
-    Neutral zone spots: diameter 2' => r=1', 5' from each blue line; 44' apart across width => y=42.5±22
-    End zone spots: centers 20' from each goal line and 22' from centerline => x=31 & 169; y=42.5±22
-    Goal posts: inside distance 6' -> posts at y=42.5±3 on goal line center
-    Crease: one foot outside each post => y=42.5±4; side lines 4'6" (4.5') from goal line; arc radius 6'
-    Trapezoid: begins 6' from either post (on goal line), ends 28' apart at end boards
-  -->
+<header>
+  <div class="row">
+    <div class="clock" id="clock">20:00</div>
+    <div>
+      <button id="startStop">Start</button>
+      <button id="undo">Undo</button>
+    </div>
+  </div>
+</header>
 
-  <!-- ===== boards (outer boundary) ===== -->
+<main>
+
+<!-- ===== NHL REGULATION RINK (1 unit = 1 foot) ===== -->
+<svg id="rink" viewBox="0 0 200 85" preserveAspectRatio="xMidYMid meet">
+
+  <!-- Boards -->
   <rect x="0" y="0" width="200" height="85" rx="28" ry="28"
         fill="none" stroke="#e5e7eb" stroke-width="0.8"/>
 
-  <!-- ===== goal lines (2" wide) ===== -->
-  <!-- goal line centers at x=11 and x=189 -->
-  <rect x="10.9166667" y="0" width="0.1666667" height="85" fill="#ef4444"/>
-  <rect x="188.9166667" y="0" width="0.1666667" height="85" fill="#ef4444"/>
+  <!-- Goal lines -->
+  <rect x="10.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
+  <rect x="188.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
 
-  <!-- ===== blue lines (12" wide) ===== -->
+  <!-- Blue lines -->
   <rect x="74.5"  y="0" width="1" height="85" fill="#3b82f6"/>
   <rect x="124.5" y="0" width="1" height="85" fill="#3b82f6"/>
 
-  <!-- ===== center red line (12" wide) ===== -->
+  <!-- Center red line -->
   <rect x="99.5" y="0" width="1" height="85" fill="#ef4444"/>
 
-  <!-- ===== center faceoff circle + spot ===== -->
-  <circle cx="100" cy="42.5" r="15" fill="none" stroke="#3b82f6" stroke-width="0.1666667"/>
+  <!-- Center circle + dot -->
+  <circle cx="100" cy="42.5" r="15" fill="none" stroke="#3b82f6" stroke-width="0.1667"/>
   <circle cx="100" cy="42.5" r="0.5" fill="#3b82f6"/>
 
-  <!-- ===== neutral-zone faceoff spots (2' diameter), 5' from each blue line, 44' apart across width ===== -->
-  <!-- y = 42.5 ± 22 => 20.5 and 64.5 -->
-  <!-- near left blue line: x = 75 + 5 = 80 -->
-  <!-- near right blue line: x = 125 - 5 = 120 -->
-  <g fill="none" stroke="#ef4444" stroke-width="0.1666667">
-    <circle cx="80"  cy="20.5" r="1"/><circle cx="80"  cy="64.5" r="1"/>
-    <circle cx="120" cy="20.5" r="1"/><circle cx="120" cy="64.5" r="1"/>
-  </g>
-
-  <!-- ===== end-zone faceoff circles (radius 15', 2" wide) + spots (2' diameter) ===== -->
-  <!-- centers: x = goal line ± 20 => 31 and 169; y = 42.5 ± 22 => 20.5 and 64.5 -->
-  <g fill="none" stroke="#ef4444" stroke-width="0.1666667">
-    <!-- circles -->
+  <!-- End-zone faceoff circles + dots -->
+  <g stroke="#ef4444" stroke-width="0.1667" fill="none">
     <circle cx="31"  cy="20.5" r="15"/><circle cx="31"  cy="64.5" r="15"/>
     <circle cx="169" cy="20.5" r="15"/><circle cx="169" cy="64.5" r="15"/>
-    <!-- spots -->
+  </g>
+  <g fill="#ef4444">
     <circle cx="31"  cy="20.5" r="1"/><circle cx="31"  cy="64.5" r="1"/>
     <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
   </g>
 
-  <!-- ===== goalie restricted trapezoids (2" wide red lines) ===== -->
-  <!-- left: starts at goal line x=11 at y=42.5±9 (6' from posts), ends at end boards x=0 at y=42.5±14 (28' apart) -->
-  <!-- right: starts at x=189 at y=42.5±9, ends at x=200 at y=42.5±14 -->
-  <g stroke="#ef4444" stroke-width="0.1666667" fill="none">
-    <!-- left trapezoid edges -->
-    <line x1="11" y1="33.5" x2="0"   y2="28.5"/>
-    <line x1="11" y1="51.5" x2="0"   y2="56.5"/>
-    <!-- right trapezoid edges -->
-    <line x1="189" y1="33.5" x2="200" y2="28.5"/>
-    <line x1="189" y1="51.5" x2="200" y2="56.5"/>
+  <!-- Neutral-zone dots -->
+  <g fill="none" stroke="#ef4444" stroke-width="0.1667">
+    <circle cx="80"  cy="20.5" r="1"/><circle cx="80"  cy="64.5" r="1"/>
+    <circle cx="120" cy="20.5" r="1"/><circle cx="120" cy="64.5" r="1"/>
   </g>
 
-  <!-- ===== goal creases (2" red outline) ===== -->
-  <!-- Per NHL rule text: 1' outside each post; side lines 4'6"; semicircle radius 6' centered on goal line center -->
-  <!-- left crease: goal line center at (11,42.5) -->
-  <path d="
-    M 11 38.5
-    L 15.5 38.5
-    A 6 6 0 0 1 15.5 46.5
-    L 11 46.5
-    " fill="none" stroke="#ef4444" stroke-width="0.1666667"/>
+  <!-- Goal creases -->
+  <path d="M 11 38.5 L 15.5 38.5 A 6 6 0 0 1 15.5 46.5 L 11 46.5"
+        fill="none" stroke="#ef4444" stroke-width="0.1667"/>
+  <path d="M 189 38.5 L 184.5 38.5 A 6 6 0 0 0 184.5 46.5 L 189 46.5"
+        fill="none" stroke="#ef4444" stroke-width="0.1667"/>
 
-  <!-- right crease: goal line center at (189,42.5) -->
-  <path d="
-    M 189 38.5
-    L 184.5 38.5
-    A 6 6 0 0 0 184.5 46.5
-    L 189 46.5
-    " fill="none" stroke="#ef4444" stroke-width="0.1666667"/>
-
-  <!-- ===== (optional) faint centerline “distinctive design” ticks (visual aid) ===== -->
-  <!-- The NHL requires a distinctive design on the center line; ticks are a simple compliant visual cue. -->
-  <g stroke="#e5e7eb" stroke-width="0.08" opacity="0.35">
-    <!-- ticks every 5 feet -->
-    <script type="application/ecmascript"><![CDATA[
-      // (kept empty intentionally; no JS needed for static snippet)
-    ]]></script>
-  </g>
+  <!-- Event markers -->
+  <g id="markers"></g>
 </svg>
+
+<div class="hint" id="hint">Tap an event, then tap the rink</div>
+
+<div class="events" id="events"></div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="controls">
+  <div class="grid">
+    <button data-type="goal">GOAL</button>
+    <button data-type="shot">SHOT</button>
+    <button data-type="hit">HIT</button>
+    <button data-type="penalty">PENALTY</button>
+    <button data-type="possession">POSSESSION</button>
+    <button data-type="note">NOTE</button>
+  </div>
+</div>
+
+<script>
+/* ================== STATE ================== */
+const state = {
+  clock: 20 * 60,
+  running: false,
+  events: [],
+  pendingEvent: null
+};
+
+const rink = document.getElementById("rink");
+const markers = document.getElementById("markers");
+const eventsEl = document.getElementById("events");
+const toast = document.getElementById("toast");
+const hint = document.getElementById("hint");
+
+/* ================== UTIL ================== */
+function formatTime(t) {
+  return String(Math.floor(t / 60)).padStart(2, "0") + ":" +
+         String(t % 60).padStart(2, "0");
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2000);
+}
+
+/* ================== RENDER ================== */
+function render() {
+  document.getElementById("clock").textContent = formatTime(state.clock);
+
+  eventsEl.innerHTML = state.events.map(e =>
+    `<div class="event">${e.type.toUpperCase()} @ ${formatTime(e.time)}</div>`
+  ).join("");
+
+  markers.innerHTML = "";
+  for (const e of state.events) {
+    if (!e.xy) continue;
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", e.xy.x);
+    c.setAttribute("cy", e.xy.y);
+    c.setAttribute("r", 2);
+    c.setAttribute("stroke", "#e5e7eb");
+    c.setAttribute("fill", "none");
+    c.setAttribute("stroke-width", "1");
+    markers.appendChild(c);
+  }
+}
+
+/* ================== EVENTS ================== */
+document.querySelectorAll(".grid button").forEach(btn => {
+  btn.onclick = () => {
+    const evt = { type: btn.dataset.type, time: state.clock };
+    state.events.unshift(evt);
+    state.pendingEvent = evt;
+    hint.textContent = "Tap the rink to place event";
+    showToast("Event logged");
+    render();
+  };
+});
+
+rink.addEventListener("click", e => {
+  if (!state.pendingEvent) return;
+
+  const r = rink.getBoundingClientRect();
+  state.pendingEvent.xy = {
+    x: (e.clientX - r.left) / r.width * 200,
+    y: (e.clientY - r.top) / r.height * 85
+  };
+
+  state.pendingEvent = null;
+  hint.textContent = "Tap an event, then tap the rink";
+  render();
+});
+
+document.getElementById("startStop").onclick = () => {
+  state.running = !state.running;
+};
+
+document.getElementById("undo").onclick = () => {
+  state.events.shift();
+  render();
+};
+
+/* ================== CLOCK ================== */
+setInterval(() => {
+  if (state.running && state.clock > 0) {
+    state.clock--;
+    render();
+  }
+}, 1000);
+
+render();
+</script>
 
 </body>
 </html>
