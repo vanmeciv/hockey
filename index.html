@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NHL Regulation Rink + Event Logger</title>
+<title>NHL Regulation Rink + Event Logger (0.1s)</title>
 
 <style>
   body {
@@ -28,10 +28,11 @@
   .clock {
     font-size:28px;
     font-weight:800;
+    letter-spacing:0.5px;
   }
 
   main {
-    padding:12px 12px 150px;
+    padding:12px 12px 180px;
   }
 
   svg {
@@ -62,6 +63,9 @@
     border-radius:10px;
     padding:6px 8px;
     font-size:14px;
+    display:flex;
+    gap:8px;
+    align-items:center;
   }
 
   .controls {
@@ -80,6 +84,13 @@
     gap:10px;
   }
 
+  .timeGrid {
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin-top:10px;
+  }
+
   button {
     background:#1f2937;
     color:#e5e7eb;
@@ -96,7 +107,7 @@
     position:fixed;
     left:12px;
     right:12px;
-    bottom:130px;
+    bottom:200px;
     background:#0b1220;
     border:1px solid #1f2937;
     border-radius:12px;
@@ -113,7 +124,7 @@
 
 <header>
   <div class="row">
-    <div class="clock" id="clock">20:00</div>
+    <div class="clock" id="clock">20:00.0</div>
     <div>
       <button id="startStop">Start</button>
       <button id="undo">Undo</button>
@@ -123,56 +134,26 @@
 
 <main>
 
-<!-- ===== NHL REGULATION RINK (1 unit = 1 foot) ===== -->
+<!-- NHL regulation rink (200 x 85 feet) -->
 <svg id="rink" viewBox="0 0 200 85" preserveAspectRatio="xMidYMid meet">
-
-  <!-- Boards -->
   <rect x="0" y="0" width="200" height="85" rx="28" ry="28"
         fill="none" stroke="#e5e7eb" stroke-width="0.8"/>
 
-  <!-- Goal lines -->
   <rect x="10.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
   <rect x="188.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
 
-  <!-- Blue lines -->
   <rect x="74.5"  y="0" width="1" height="85" fill="#3b82f6"/>
   <rect x="124.5" y="0" width="1" height="85" fill="#3b82f6"/>
 
-  <!-- Center red line -->
   <rect x="99.5" y="0" width="1" height="85" fill="#ef4444"/>
 
-  <!-- Center circle + dot -->
   <circle cx="100" cy="42.5" r="15" fill="none" stroke="#3b82f6" stroke-width="0.1667"/>
   <circle cx="100" cy="42.5" r="0.5" fill="#3b82f6"/>
 
-  <!-- End-zone faceoff circles + dots -->
-  <g stroke="#ef4444" stroke-width="0.1667" fill="none">
-    <circle cx="31"  cy="20.5" r="15"/><circle cx="31"  cy="64.5" r="15"/>
-    <circle cx="169" cy="20.5" r="15"/><circle cx="169" cy="64.5" r="15"/>
-  </g>
-  <g fill="#ef4444">
-    <circle cx="31"  cy="20.5" r="1"/><circle cx="31"  cy="64.5" r="1"/>
-    <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
-  </g>
-
-  <!-- Neutral-zone dots -->
-  <g fill="none" stroke="#ef4444" stroke-width="0.1667">
-    <circle cx="80"  cy="20.5" r="1"/><circle cx="80"  cy="64.5" r="1"/>
-    <circle cx="120" cy="20.5" r="1"/><circle cx="120" cy="64.5" r="1"/>
-  </g>
-
-  <!-- Goal creases -->
-  <path d="M 11 38.5 L 15.5 38.5 A 6 6 0 0 1 15.5 46.5 L 11 46.5"
-        fill="none" stroke="#ef4444" stroke-width="0.1667"/>
-  <path d="M 189 38.5 L 184.5 38.5 A 6 6 0 0 0 184.5 46.5 L 189 46.5"
-        fill="none" stroke="#ef4444" stroke-width="0.1667"/>
-
-  <!-- Event markers -->
   <g id="markers"></g>
 </svg>
 
 <div class="hint" id="hint">Tap an event, then tap the rink</div>
-
 <div class="events" id="events"></div>
 
 </main>
@@ -188,12 +169,31 @@
     <button data-type="possession">POSSESSION</button>
     <button data-type="note">NOTE</button>
   </div>
+
+  <!-- Time adjustment -->
+  <div class="timeGrid">
+    <button data-dt="-10">-1s</button>
+    <button data-dt="-1">-0.1s</button>
+    <button data-dt="1">+0.1s</button>
+    <button data-dt="10">+1s</button>
+  </div>
 </div>
 
 <script>
+/* ================== EVENT SYMBOLS ================== */
+const SYMBOL = {
+  goal: "●",
+  shot: "△",
+  hit: "✖",
+  penalty: "▢",
+  possession: "⇄",
+  note: "✎"
+};
+
 /* ================== STATE ================== */
 const state = {
-  clock: 20 * 60,
+  // time in tenths of a second
+  clockTenths: 20 * 60 * 10,
   running: false,
   events: [],
   pendingEvent: null
@@ -206,9 +206,12 @@ const toast = document.getElementById("toast");
 const hint = document.getElementById("hint");
 
 /* ================== UTIL ================== */
-function formatTime(t) {
-  return String(Math.floor(t / 60)).padStart(2, "0") + ":" +
-         String(t % 60).padStart(2, "0");
+function formatTime(tenths) {
+  const totalSeconds = Math.floor(tenths / 10);
+  const t = tenths % 10;
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${t}`;
 }
 
 function showToast(msg) {
@@ -219,30 +222,37 @@ function showToast(msg) {
 
 /* ================== RENDER ================== */
 function render() {
-  document.getElementById("clock").textContent = formatTime(state.clock);
+  document.getElementById("clock").textContent = formatTime(state.clockTenths);
 
   eventsEl.innerHTML = state.events.map(e =>
-    `<div class="event">${e.type.toUpperCase()} @ ${formatTime(e.time)}</div>`
+    `<div class="event">
+      <strong>${SYMBOL[e.type] ?? "?"}</strong>
+      ${e.type.toUpperCase()} @ ${formatTime(e.time)}
+     </div>`
   ).join("");
 
   markers.innerHTML = "";
   for (const e of state.events) {
     if (!e.xy) continue;
-    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("cx", e.xy.x);
-    c.setAttribute("cy", e.xy.y);
-    c.setAttribute("r", 2);
-    c.setAttribute("stroke", "#e5e7eb");
-    c.setAttribute("fill", "none");
-    c.setAttribute("stroke-width", "1");
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    c.setAttribute("x", e.xy.x);
+    c.setAttribute("y", e.xy.y);
+    c.setAttribute("font-size", "4");
+    c.setAttribute("fill", "#e5e7eb");
+    c.setAttribute("text-anchor", "middle");
+    c.setAttribute("dominant-baseline", "middle");
+    c.textContent = SYMBOL[e.type] ?? "?";
     markers.appendChild(c);
   }
 }
 
-/* ================== EVENTS ================== */
+/* ================== EVENT BUTTONS ================== */
 document.querySelectorAll(".grid button").forEach(btn => {
   btn.onclick = () => {
-    const evt = { type: btn.dataset.type, time: state.clock };
+    const evt = {
+      type: btn.dataset.type,
+      time: state.clockTenths
+    };
     state.events.unshift(evt);
     state.pendingEvent = evt;
     hint.textContent = "Tap the rink to place event";
@@ -251,6 +261,7 @@ document.querySelectorAll(".grid button").forEach(btn => {
   };
 });
 
+/* ================== RINK CLICK ================== */
 rink.addEventListener("click", e => {
   if (!state.pendingEvent) return;
 
@@ -265,6 +276,7 @@ rink.addEventListener("click", e => {
   render();
 });
 
+/* ================== CLOCK ================== */
 document.getElementById("startStop").onclick = () => {
   state.running = !state.running;
 };
@@ -274,13 +286,19 @@ document.getElementById("undo").onclick = () => {
   render();
 };
 
-/* ================== CLOCK ================== */
+document.querySelectorAll(".timeGrid button").forEach(btn => {
+  btn.onclick = () => {
+    state.clockTenths = Math.max(0, state.clockTenths + Number(btn.dataset.dt));
+    render();
+  };
+});
+
 setInterval(() => {
-  if (state.running && state.clock > 0) {
-    state.clock--;
+  if (state.running && state.clockTenths > 0) {
+    state.clockTenths--;
     render();
   }
-}, 1000);
+}, 100);
 
 render();
 </script>
