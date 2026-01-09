@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NHL Regulation Rink + Event Logger (0.1s, Team Possession)</title>
+<title>NHL Regulation Rink + Event Logger (0.1s, Auto Possession Team)</title>
 
 <style>
   body { margin:0; background:#0b0f14; color:#e5e7eb; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
@@ -19,10 +19,11 @@
     display:inline-flex; gap:8px; align-items:center;
     padding:8px 10px; border:1px solid #1f2937; border-radius:999px;
     background:#0b1220; color:#e5e7eb; font-weight:800; font-size:13px;
+    user-select:none;
   }
   .dot { width:10px; height:10px; border-radius:999px; display:inline-block; }
-  .dot.home { background:#22c55e; } /* green */
-  .dot.away { background:#60a5fa; } /* blue */
+  .dot.home { background:#22c55e; }
+  .dot.away { background:#60a5fa; }
 
   main { padding:12px 12px 220px; }
   #rink { width:100%; height:auto; background:#0b1220; border-radius:18px; border:1px solid #1f2937; touch-action:manipulation; }
@@ -62,11 +63,11 @@
   <div class="row">
     <div class="clock" id="clock">20:00.0</div>
     <div class="btnRow">
-      <span class="teamPill" id="possTeamPill" title="Possession owner for next event (tap to toggle)">
+      <span class="teamPill" id="possTeamPill" title="Next POSSESSION owner (tap to toggle)">
         <span class="dot home" id="possDot"></span>
-        <span id="possLabel">Home possession</span>
+        <span id="possLabel">Next possession: HOME</span>
       </span>
-      <button id="toggleTeam" title="Toggle possession owner (Home/Away)">Toggle</button>
+      <button id="toggleTeam" title="Toggle next POSSESSION owner">Toggle</button>
       <button id="startStop">Start</button>
       <button id="undo">Undo</button>
       <button id="clearPending">Clear “place”</button>
@@ -76,55 +77,42 @@
 
 <main>
 
-<!-- ===== NHL REGULATION RINK (1 unit = 1 foot; viewBox 200 x 85) ===== -->
 <svg id="rink" viewBox="0 0 200 85" preserveAspectRatio="xMidYMid meet" aria-label="NHL regulation rink (feet)">
-  <!-- Boards -->
   <rect x="0" y="0" width="200" height="85" rx="28" ry="28"
         fill="none" stroke="#e5e7eb" stroke-width="0.8"/>
 
-  <!-- Goal lines (2" wide = 0.1667') at x=11 and x=189 (centered) -->
   <rect x="10.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
   <rect x="188.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
 
-  <!-- Blue lines (12" wide = 1') centered at x=75 and x=125 -->
   <rect x="74.5"  y="0" width="1" height="85" fill="#3b82f6"/>
   <rect x="124.5" y="0" width="1" height="85" fill="#3b82f6"/>
 
-  <!-- Center red line (12" wide = 1') -->
   <rect x="99.5" y="0" width="1" height="85" fill="#ef4444"/>
 
-  <!-- Center faceoff circle (15' radius) + center dot (12" diameter => r=0.5') -->
   <circle cx="100" cy="42.5" r="15" fill="none" stroke="#3b82f6" stroke-width="0.1667"/>
   <circle cx="100" cy="42.5" r="0.5" fill="#3b82f6"/>
 
-  <!-- Neutral-zone faceoff spots -->
   <g fill="none" stroke="#ef4444" stroke-width="0.1667">
     <circle cx="80"  cy="20.5" r="1"/><circle cx="80"  cy="64.5" r="1"/>
     <circle cx="120" cy="20.5" r="1"/><circle cx="120" cy="64.5" r="1"/>
   </g>
 
-  <!-- End-zone faceoff circles -->
   <g fill="none" stroke="#ef4444" stroke-width="0.1667">
     <circle cx="31"  cy="20.5" r="15"/><circle cx="31"  cy="64.5" r="15"/>
     <circle cx="169" cy="20.5" r="15"/><circle cx="169" cy="64.5" r="15"/>
   </g>
 
-  <!-- End-zone faceoff dots -->
   <g fill="#ef4444">
     <circle cx="31"  cy="20.5" r="1"/><circle cx="31"  cy="64.5" r="1"/>
     <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
   </g>
 
-  <!-- Goal creases -->
   <path d="M 11 38.5 L 15.5 38.5 A 6 6 0 0 1 15.5 46.5 L 11 46.5"
         fill="none" stroke="#ef4444" stroke-width="0.1667"/>
   <path d="M 189 38.5 L 184.5 38.5 A 6 6 0 0 0 184.5 46.5 L 189 46.5"
         fill="none" stroke="#ef4444" stroke-width="0.1667"/>
 
-  <!-- Possession path lines (behind symbols) -->
   <g id="possessionLines"></g>
-
-  <!-- Event markers (on top) -->
   <g id="markers"></g>
 </svg>
 
@@ -163,29 +151,15 @@
 </div>
 
 <script>
-/* ===== Symbols per event type ===== */
-const SYMBOL = {
-  goal: "●",
-  shot: "△",
-  hit: "✖",
-  penalty: "▢",
-  possession: "⇄",
-  note: "✎"
-};
+const SYMBOL = { goal:"●", shot:"△", hit:"✖", penalty:"▢", possession:"⇄", note:"✎" };
+const TEAM_COLOR = { home:"#22c55e", away:"#60a5fa" };
 
-/* ===== Team colors (for possession ⇄ and possession path) ===== */
-const TEAM_COLOR = {
-  home: "#22c55e", // green
-  away: "#60a5fa"  // blue
-};
-
-/* ===== State: time in tenths ===== */
 const state = {
   clockTenths: 20 * 60 * 10,
   running: false,
   events: [],
   pendingEvent: null,
-  possessionTeam: "home" // owner for next logged event (esp. possession)
+  possessionTeam: "home" // "next possession owner"
 };
 
 const rink = document.getElementById("rink");
@@ -219,28 +193,25 @@ function updatePossessionUI() {
   const team = state.possessionTeam;
   possDot.classList.toggle("home", team === "home");
   possDot.classList.toggle("away", team === "away");
-  possLabel.textContent = team === "home" ? "Home possession" : "Away possession";
+  possLabel.textContent = `Next possession: ${team.toUpperCase()}`;
 }
 
-function togglePossessionTeam() {
+function togglePossessionTeam(show=true) {
   state.possessionTeam = (state.possessionTeam === "home") ? "away" : "home";
   updatePossessionUI();
-  showToast(`Possession set: ${state.possessionTeam.toUpperCase()}`);
+  if (show) showToast(`Next possession: ${state.possessionTeam.toUpperCase()}`);
 }
 
-/* ===== Render ===== */
 function render() {
   document.getElementById("clock").textContent = formatTime(state.clockTenths);
 
-  // timeline
-  eventsEl.innerHTML = state.events.map((e, idx) => {
+  eventsEl.innerHTML = state.events.map((e) => {
     const sym = SYMBOL[e.type] ?? "?";
     const placed = e.xy ? "placed" : "unplaced";
-    const teamPill = e.type === "possession"
-      ? `<span class="pill ${e.team}">${e.team.toUpperCase()}</span>`
-      : "";
-    return `<div class="event" data-idx="${idx}">
-      <strong style="color:${e.type === "possession" ? TEAM_COLOR[e.team] : "#e5e7eb"}">${sym}</strong>
+    const teamPill = e.type === "possession" ? `<span class="pill ${e.team}">${e.team.toUpperCase()}</span>` : "";
+    const symColor = (e.type === "possession") ? (TEAM_COLOR[e.team] ?? "#e5e7eb") : "#e5e7eb";
+    return `<div class="event">
+      <strong style="color:${symColor}">${sym}</strong>
       <span>${e.type.toUpperCase()} @ ${formatTime(e.time)}</span>
       ${teamPill}
       <span class="meta">${placed}</span>
@@ -255,8 +226,6 @@ function render() {
   for (let i = 1; i < possPlaced.length; i++) {
     const a = possPlaced[i - 1];
     const b = possPlaced[i];
-
-    // color the segment by the *starting* possession owner (a.team)
     const segColor = TEAM_COLOR[a.team] ?? "#e5e7eb";
 
     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -271,9 +240,9 @@ function render() {
     possessionLines.appendChild(line);
   }
 
-  // markers (symbols)
+  // markers
   markers.innerHTML = "";
-  const ordered = [...state.events].reverse(); // draw older first
+  const ordered = [...state.events].reverse();
   for (const e of ordered) {
     if (!e.xy) continue;
 
@@ -285,36 +254,34 @@ function render() {
     t.setAttribute("dominant-baseline", "middle");
     t.textContent = SYMBOL[e.type] ?? "?";
 
-    // team-colored possession symbol; other symbols stay white
     const fill = (e.type === "possession") ? (TEAM_COLOR[e.team] ?? "#e5e7eb") : "#e5e7eb";
     t.setAttribute("fill", fill);
-
     markers.appendChild(t);
   }
 }
 
-/* ===== Log event (arm placement) ===== */
+/* ===== Log event ===== */
 document.querySelectorAll(".grid button").forEach(btn => {
   btn.addEventListener("click", () => {
     const type = btn.dataset.type;
 
-    const evt = {
-      type,
-      time: state.clockTenths,
-      xy: null,
-      // only possession events carry a team (home/away)
-      team: (type === "possession") ? state.possessionTeam : null
-    };
+    // capture the team at LOG TIME (not later)
+    const teamAtLog = (type === "possession") ? state.possessionTeam : null;
 
+    const evt = { type, time: state.clockTenths, xy: null, team: teamAtLog };
     state.events.unshift(evt);
     state.pendingEvent = evt;
 
     hint.textContent = "Now tap the rink to place that event (optional).";
+
     if (type === "possession") {
-      showToast(`${SYMBOL[type]} ${type.toUpperCase()} (${evt.team.toUpperCase()}) logged`);
+      showToast(`${SYMBOL[type]} POSSESSION (${teamAtLog.toUpperCase()}) logged`);
+      // IMPORTANT: auto-advance to the OTHER team for the next possession press
+      togglePossessionTeam(false);
     } else {
       showToast(`${SYMBOL[type]} ${type.toUpperCase()} logged`);
     }
+
     render();
   });
 });
@@ -327,7 +294,7 @@ rink.addEventListener("click", (e) => {
   }
 
   const r = rink.getBoundingClientRect();
-  const x = (e.clientX - r.left) / r.width * 200; // feet coords
+  const x = (e.clientX - r.left) / r.width * 200;
   const y = (e.clientY - r.top) / r.height * 85;
 
   state.pendingEvent.xy = { x, y };
@@ -338,9 +305,9 @@ rink.addEventListener("click", (e) => {
   render();
 });
 
-/* ===== Possession team toggle ===== */
-document.getElementById("toggleTeam").addEventListener("click", togglePossessionTeam);
-possTeamPill.addEventListener("click", togglePossessionTeam);
+/* ===== Possession team toggle (manual correction) ===== */
+document.getElementById("toggleTeam").addEventListener("click", () => togglePossessionTeam(true));
+possTeamPill.addEventListener("click", () => togglePossessionTeam(true));
 
 /* ===== Clock controls ===== */
 document.getElementById("startStop").addEventListener("click", () => {
@@ -369,11 +336,10 @@ document.getElementById("clearPending").addEventListener("click", () => {
   render();
 });
 
-/* ===== Time adjust (tenths) ===== */
+/* ===== Time adjust ===== */
 document.querySelectorAll(".timeGrid button[data-dt]").forEach(btn => {
   btn.addEventListener("click", () => {
-    const dt = Number(btn.dataset.dt);
-    state.clockTenths = Math.max(0, state.clockTenths + dt);
+    state.clockTenths = Math.max(0, state.clockTenths + Number(btn.dataset.dt));
     render();
   });
 });
