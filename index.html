@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NHL Regulation Rink + Event Logger (0.1s, Team-Colored Events)</title>
+<title>NHL Rink + Event Logger (0.1s, Possession Change)</title>
 
 <style>
   body { margin:0; background:#0b0f14; color:#e5e7eb; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
@@ -70,13 +70,14 @@
       <button id="toggleTeam" title="Toggle team context (Home/Away)">Toggle</button>
       <button id="startStop">Start</button>
       <button id="undo">Undo</button>
-      <button id="clearPending">Clear “place”</button>
+      <button id="clearPending">Clear</button>
     </div>
   </div>
 </header>
 
 <main>
 
+<!-- NHL regulation rink (200 x 85 feet). Goal dots removed. -->
 <svg id="rink" viewBox="0 0 200 85" preserveAspectRatio="xMidYMid meet" aria-label="NHL regulation rink (feet)">
   <rect x="0" y="0" width="200" height="85" rx="28" ry="28"
         fill="none" stroke="#e5e7eb" stroke-width="0.8"/>
@@ -112,11 +113,14 @@
   <path d="M 189 38.5 L 184.5 38.5 A 6 6 0 0 0 184.5 46.5 L 189 46.5"
         fill="none" stroke="#ef4444" stroke-width="0.1667"/>
 
-  <g id="possessionLines"></g>
+  <!-- Possession-change geometry (behind symbols) -->
+  <g id="possessionChangeLines"></g>
+
+  <!-- Event markers -->
   <g id="markers"></g>
 </svg>
 
-<div class="hint" id="hint">Tap an event, then tap the rink to place it (optional).</div>
+<div class="hint" id="hint">Tap an event, then tap the rink to place it (optional). Possession Change requires 2 taps (loss → gain).</div>
 <div class="events" id="events"></div>
 
 </main>
@@ -129,7 +133,7 @@
     <button data-type="shot">SHOT</button>
     <button data-type="hit">HIT</button>
     <button data-type="penalty">PENALTY</button>
-    <button data-type="possession">POSSESSION</button>
+    <button data-type="pos_change">POSSESSION CHANGE</button>
     <button data-type="note">NOTE</button>
   </div>
 
@@ -151,20 +155,29 @@
 </div>
 
 <script>
-const SYMBOL = { goal:"●", shot:"△", hit:"✖", penalty:"▢", possession:"⇄", note:"✎" };
+const SYMBOL = {
+  goal:"●",
+  shot:"△",
+  hit:"✖",
+  penalty:"▢",
+  pos_change:"⇄", // rendered twice (loss + gain)
+  note:"✎"
+};
+
 const TEAM_COLOR = { home:"#22c55e", away:"#60a5fa" };
 
 const state = {
   clockTenths: 20 * 60 * 10,
   running: false,
   events: [],
-  pendingEvent: null,
-  teamContext: "home" // team assigned to newly-logged events
+  // pending placement: { event, stage } where stage is "single" or "loss"/"gain"
+  pending: null,
+  teamContext: "home" // team assigned to newly logged events (and LOSS side of possession change)
 };
 
 const rink = document.getElementById("rink");
 const markers = document.getElementById("markers");
-const possessionLines = document.getElementById("possessionLines");
+const pcLines = document.getElementById("possessionChangeLines");
 const eventsEl = document.getElementById("events");
 const toast = document.getElementById("toast");
 const hint = document.getElementById("hint");
@@ -202,109 +215,198 @@ function toggleTeamContext(show=true) {
   if (show) showToast(`Team context: ${state.teamContext.toUpperCase()}`);
 }
 
+function otherTeam(team) { return team === "home" ? "away" : "home"; }
+
+function svgPointFromClick(evt) {
+  const r = rink.getBoundingClientRect();
+  return {
+    x: (evt.clientX - r.left) / r.width * 200,
+    y: (evt.clientY - r.top) / r.height * 85
+  };
+}
+
+/* ===== rendering ===== */
 function render() {
   document.getElementById("clock").textContent = formatTime(state.clockTenths);
 
-  eventsEl.innerHTML = state.events.map((e) => {
-    const sym = SYMBOL[e.type] ?? "?";
-    const placed = e.xy ? "placed" : "unplaced";
-    const symColor = TEAM_COLOR[e.team] ?? "#e5e7eb";
-    const teamPill = `<span class="pill ${e.team}">${e.team.toUpperCase()}</span>`;
-    return `<div class="event">
-      <strong style="color:${symColor}">${sym}</strong>
-      <span>${e.type.toUpperCase()} @ ${formatTime(e.time)}</span>
-      ${teamPill}
-      <span class="meta">${placed}</span>
-    </div>`;
+  // timeline
+  eventsEl.innerHTML = state.events.map(e => {
+    if (e.type === "pos_change") {
+      const lossColor = TEAM_COLOR[e.lossTeam];
+      const gainColor = TEAM_COLOR[e.gainTeam];
+      const placed = (e.lossXY && e.gainXY) ? "placed" : "unplaced";
+      return `<div class="event">
+        <strong style="color:${lossColor}">⇄</strong>
+        <span>POS CHANGE @ ${formatTime(e.time)}</span>
+        <span class="pill ${e.lossTeam}">${e.lossTeam.toUpperCase()} LOSS</span>
+        <span class="pill ${e.gainTeam}">${e.gainTeam.toUpperCase()} GAIN</span>
+        <span class="meta">${placed}</span>
+      </div>`;
+    } else {
+      const sym = SYMBOL[e.type] ?? "?";
+      const symColor = TEAM_COLOR[e.team] ?? "#e5e7eb";
+      const placed = e.xy ? "placed" : "unplaced";
+      return `<div class="event">
+        <strong style="color:${symColor}">${sym}</strong>
+        <span>${e.type.toUpperCase()} @ ${formatTime(e.time)}</span>
+        <span class="pill ${e.team}">${e.team.toUpperCase()}</span>
+        <span class="meta">${placed}</span>
+      </div>`;
+    }
   }).join("");
 
-  // possession path lines (connect consecutive possession events; color by starting team's ownership)
-  possessionLines.innerHTML = "";
+  // possession-change geometry (lines)
+  pcLines.innerHTML = "";
   const chronological = [...state.events].reverse();
-  const possPlaced = chronological.filter(ev => ev.type === "possession" && ev.xy);
+  for (const e of chronological) {
+    if (e.type !== "pos_change") continue;
+    if (!e.lossXY || !e.gainXY) continue;
 
-  for (let i = 1; i < possPlaced.length; i++) {
-    const a = possPlaced[i - 1];
-    const b = possPlaced[i];
-    const segColor = TEAM_COLOR[a.team] ?? "#e5e7eb";
+    // split line at midpoint: lossTeam color then gainTeam color
+    const mid = { x:(e.lossXY.x + e.gainXY.x)/2, y:(e.lossXY.y + e.gainXY.y)/2 };
 
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", a.xy.x);
-    line.setAttribute("y1", a.xy.y);
-    line.setAttribute("x2", b.xy.x);
-    line.setAttribute("y2", b.xy.y);
-    line.setAttribute("stroke", segColor);
-    line.setAttribute("stroke-width", "0.8");
-    line.setAttribute("opacity", "0.80");
-    line.setAttribute("stroke-linecap", "round");
-    possessionLines.appendChild(line);
+    const l1 = document.createElementNS("http://www.w3.org/2000/svg","line");
+    l1.setAttribute("x1", e.lossXY.x); l1.setAttribute("y1", e.lossXY.y);
+    l1.setAttribute("x2", mid.x);      l1.setAttribute("y2", mid.y);
+    l1.setAttribute("stroke", TEAM_COLOR[e.lossTeam]);
+    l1.setAttribute("stroke-width", "0.9");
+    l1.setAttribute("opacity", "0.85");
+    l1.setAttribute("stroke-linecap", "round");
+
+    const l2 = document.createElementNS("http://www.w3.org/2000/svg","line");
+    l2.setAttribute("x1", mid.x);      l2.setAttribute("y1", mid.y);
+    l2.setAttribute("x2", e.gainXY.x); l2.setAttribute("y2", e.gainXY.y);
+    l2.setAttribute("stroke", TEAM_COLOR[e.gainTeam]);
+    l2.setAttribute("stroke-width", "0.9");
+    l2.setAttribute("opacity", "0.85");
+    l2.setAttribute("stroke-linecap", "round");
+
+    pcLines.appendChild(l1);
+    pcLines.appendChild(l2);
   }
 
-  // markers (symbols; team-colored for all event types)
+  // markers (symbols)
   markers.innerHTML = "";
-  const ordered = [...state.events].reverse(); // draw older first
-  for (const e of ordered) {
-    if (!e.xy) continue;
-
-    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    t.setAttribute("x", e.xy.x);
-    t.setAttribute("y", e.xy.y);
-    t.setAttribute("font-size", "4");
-    t.setAttribute("text-anchor", "middle");
-    t.setAttribute("dominant-baseline", "middle");
-    t.textContent = SYMBOL[e.type] ?? "?";
-    t.setAttribute("fill", TEAM_COLOR[e.team] ?? "#e5e7eb");
-    markers.appendChild(t);
+  for (const e of chronological) {
+    if (e.type === "pos_change") {
+      // draw loss symbol + gain symbol
+      if (e.lossXY) {
+        const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+        t.setAttribute("x", e.lossXY.x); t.setAttribute("y", e.lossXY.y);
+        t.setAttribute("font-size","4");
+        t.setAttribute("text-anchor","middle");
+        t.setAttribute("dominant-baseline","middle");
+        t.setAttribute("fill", TEAM_COLOR[e.lossTeam]);
+        t.textContent = "⇄";
+        markers.appendChild(t);
+      }
+      if (e.gainXY) {
+        const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+        t.setAttribute("x", e.gainXY.x); t.setAttribute("y", e.gainXY.y);
+        t.setAttribute("font-size","4");
+        t.setAttribute("text-anchor","middle");
+        t.setAttribute("dominant-baseline","middle");
+        t.setAttribute("fill", TEAM_COLOR[e.gainTeam]);
+        t.textContent = "⇄";
+        markers.appendChild(t);
+      }
+    } else {
+      if (!e.xy) continue;
+      const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+      t.setAttribute("x", e.xy.x); t.setAttribute("y", e.xy.y);
+      t.setAttribute("font-size","4");
+      t.setAttribute("text-anchor","middle");
+      t.setAttribute("dominant-baseline","middle");
+      t.setAttribute("fill", TEAM_COLOR[e.team] ?? "#e5e7eb");
+      t.textContent = SYMBOL[e.type] ?? "?";
+      markers.appendChild(t);
+    }
   }
 }
 
-/* ===== Log event ===== */
+/* ===== log buttons ===== */
 document.querySelectorAll(".grid button").forEach(btn => {
   btn.addEventListener("click", () => {
     const type = btn.dataset.type;
 
-    // Every event gets a team at LOG TIME (not later)
-    const teamAtLog = state.teamContext;
+    if (type === "pos_change") {
+      const lossTeam = state.teamContext;
+      const gainTeam = otherTeam(lossTeam);
 
-    const evt = { type, time: state.clockTenths, xy: null, team: teamAtLog };
-    state.events.unshift(evt);
-    state.pendingEvent = evt;
+      const ev = {
+        type:"pos_change",
+        time: state.clockTenths,
+        lossTeam, gainTeam,
+        lossXY: null,
+        gainXY: null
+      };
 
-    hint.textContent = "Now tap the rink to place that event (optional).";
-    showToast(`${SYMBOL[type] ?? "?"} ${type.toUpperCase()} (${teamAtLog.toUpperCase()}) logged`);
+      state.events.unshift(ev);
+      state.pending = { event: ev, stage: "loss" };
+      hint.textContent = "POS CHANGE: tap LOSS location (where old team loses puck).";
+      showToast(`POS CHANGE (${lossTeam.toUpperCase()} → ${gainTeam.toUpperCase()}): place LOSS`);
+      render();
+      return;
+    }
 
-    // Special behavior: POSSESSION represents a change-of-control point.
-    // After logging a possession event, auto-flip the team context for the NEXT events.
-    if (type === "possession") toggleTeamContext(false);
-
+    // normal (single-point) event
+    const ev = { type, time: state.clockTenths, team: state.teamContext, xy: null };
+    state.events.unshift(ev);
+    state.pending = { event: ev, stage: "single" };
+    hint.textContent = "Tap the rink to place that event (optional).";
+    showToast(`${SYMBOL[type] ?? "?"} ${type.toUpperCase()} (${state.teamContext.toUpperCase()}) logged`);
     render();
   });
 });
 
-/* ===== Place event on rink ===== */
+/* ===== rink click placement ===== */
 rink.addEventListener("click", (e) => {
-  if (!state.pendingEvent) {
+  if (!state.pending) {
     showToast("No pending event to place");
     return;
   }
 
-  const r = rink.getBoundingClientRect();
-  const x = (e.clientX - r.left) / r.width * 200;
-  const y = (e.clientY - r.top) / r.height * 85;
+  const pt = svgPointFromClick(e);
+  const ev = state.pending.event;
 
-  state.pendingEvent.xy = { x, y };
-  state.pendingEvent = null;
+  if (state.pending.stage === "single") {
+    ev.xy = pt;
+    state.pending = null;
+    hint.textContent = "Tap an event, then tap the rink to place it (optional).";
+    showToast("Placed");
+    render();
+    return;
+  }
 
-  hint.textContent = "Tap an event, then tap the rink to place it (optional).";
-  showToast("Placed");
-  render();
+  if (ev.type === "pos_change") {
+    if (state.pending.stage === "loss") {
+      ev.lossXY = pt;
+      state.pending.stage = "gain";
+      hint.textContent = "POS CHANGE: tap GAIN location (where new team controls puck).";
+      showToast("Now place GAIN");
+      render();
+      return;
+    }
+    if (state.pending.stage === "gain") {
+      ev.gainXY = pt;
+      state.pending = null;
+
+      // After a possession change completes, the new team becomes the context for subsequent events.
+      state.teamContext = ev.gainTeam;
+      updateTeamUI();
+
+      hint.textContent = "Tap an event, then tap the rink to place it (optional).";
+      showToast(`Possession now: ${ev.gainTeam.toUpperCase()}`);
+      render();
+      return;
+    }
+  }
 });
 
-/* ===== Team context toggle (manual correction) ===== */
+/* ===== top controls ===== */
 document.getElementById("toggleTeam").addEventListener("click", () => toggleTeamContext(true));
 teamContextPill.addEventListener("click", () => toggleTeamContext(true));
 
-/* ===== Clock controls ===== */
 document.getElementById("startStop").addEventListener("click", () => {
   state.running = !state.running;
   document.getElementById("startStop").textContent = state.running ? "Pause" : "Start";
@@ -319,31 +421,30 @@ document.getElementById("stop").addEventListener("click", () => {
 
 document.getElementById("undo").addEventListener("click", () => {
   const removed = state.events.shift();
-  if (state.pendingEvent === removed) state.pendingEvent = null;
+  if (state.pending && state.pending.event === removed) state.pending = null;
   showToast("Undo");
   render();
 });
 
 document.getElementById("clearPending").addEventListener("click", () => {
-  state.pendingEvent = null;
-  hint.textContent = "Tap an event, then tap the rink to place it (optional).";
-  showToast("Cleared pending placement");
+  state.pending = null;
+  hint.textContent = "Tap an event, then tap the rink to place it (optional). Possession Change requires 2 taps (loss → gain).";
+  showToast("Cleared");
   render();
 });
 
-/* ===== Time adjust ===== */
+/* ===== time adjust ===== */
 document.querySelectorAll(".timeGrid button[data-dt]").forEach(btn => {
   btn.addEventListener("click", () => {
     state.clockTenths = Math.max(0, state.clockTenths + Number(btn.dataset.dt));
     render();
   });
 });
-
 document.getElementById("set2000").addEventListener("click", () => { state.clockTenths = 20*60*10; render(); });
 document.getElementById("set1500").addEventListener("click", () => { state.clockTenths = 15*60*10; render(); });
 document.getElementById("set0500").addEventListener("click", () => { state.clockTenths =  5*60*10; render(); });
 
-/* ===== Tick every 0.1s ===== */
+/* ===== tick every 0.1s ===== */
 setInterval(() => {
   if (state.running && state.clockTenths > 0) {
     state.clockTenths--;
