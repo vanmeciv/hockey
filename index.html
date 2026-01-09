@@ -185,97 +185,94 @@
       <rect x="166.2083" y="48.5" width="0.1667" height="2"/>
       <rect x="171.7917" y="48.5" width="0.1667" height="2"/>
     </g>
-      <!-- NEW: End-zone faceoff interior "L" markings (NHL spec) -->
-      <!-- Dimensions (feet): lineW=2"=0.1667, hLen=4, sep=18"=1.5, vLen=2'10"=2.8333
-           Placement: inner end is 1' from outer edge of 2' diameter spot (spot radius=1'),
-           so innerEndX = cx ± (1 + 1) = cx ± 2
-           Top/bottom horizontal centers: cy ± (sep/2)= cy ± 0.75
-      -->
-      <!-- End-zone faceoff interior "L" markings aligned to hashmarks -->
-    <!-- Units (feet): lineW=2"=0.1667, hLen=4, vLen=2'10"=2.8333, sep=18"=1.5 -->
-    <!-- Hashmark X positions already used: cx±2.7917 => left zone: 28.2083, 33.7917 | right zone: 166.2083, 171.7917 -->
+    <!-- NEW: End-zone faceoff interior "L" markings (NHL spec) -->
+    <!-- Dimensions (feet): lineW=2"=0.1667, hLen=4, sep=18"=1.5, vLen=2'10"=2.8333
+         Placement: inner end is 1' from outer edge of 2' diameter spot (spot radius=1'),
+         so innerEndX = cx ± (1 + 1) = cx ± 2
+         Top/bottom horizontal centers: cy ± (sep/2)= cy ± 0.75
+    -->
     <g id="faceoffInteriorMarks" fill="#ef4444">
-      <!-- constants -->
+      <!-- helper numbers baked in -->
       <!-- lineW = 0.1667 -->
       <!-- hLen  = 4 -->
       <!-- vLen  = 2.8333 -->
-      <!-- y offsets from dot center: ±0.75 (since 18" apart) -->
+      <!-- yTopOffset = -0.75, yBotOffset = +0.75 -->
+      <!-- innerX offset = 2 -->
     
-      <!-- Helper function mentally:
-           For a given vertical leg at xV:
-             - top horizontal sits at y=(cy-0.75 - lineW/2) = (cy - 0.83335)
-             - bottom horizontal sits at y=(cy+0.75 - lineW/2) = (cy + 0.66665)
-           Vertical legs:
-             - top leg goes UP from the top horizontal: yTopH - vLen
-             - bottom leg goes DOWN starting at bottom horizontal: yBotH
-      -->
+      <!-- ===== LEFT END ZONE SPOTS (cx=31) ===== -->
     
-      <!-- ===================== LEFT END ZONE (cx=31) ===================== -->
-      <!-- Spot A: (31, 20.5) -->
-      <!-- yTopH=19.66665, yBotH=21.16665 -->
-      <!-- vertical hash Xs: 28.2083 (left), 33.7917 (right) -->
+      <!-- Spot: (31, 20.5) -->
+      <!-- Right-side Ls (innerEndX = 33) -->
+      <!-- top horizontal -->
+      <rect x="33" y="19.6667" width="4" height="0.1667"/>
+      <!-- top vertical leg (up) -->
+      <rect x="33" y="16.8334" width="0.1667" height="2.8333"/>
     
-      <!-- LEFT hash X (28.2083): horizontal goes RIGHT toward dot -->
-      <rect x="28.2083" y="19.6667" width="4" height="0.1667"/>
-      <rect x="28.2083" y="16.8334" width="0.1667" height="2.8333"/>
+      <!-- bottom horizontal -->
+      <rect x="33" y="21.1667" width="4" height="0.1667"/>
+      <!-- bottom vertical leg (down) -->
+      <rect x="33" y="21.1667" width="0.1667" height="2.8333"/>
     
-      <rect x="28.2083" y="21.1667" width="4" height="0.1667"/>
-      <rect x="28.2083" y="21.1667" width="0.1667" height="2.8333"/>
+      <!-- Left-side Ls (innerEndX = 29) -->
+      <!-- top horizontal -->
+      <rect x="25" y="19.6667" width="4" height="0.1667"/>
+      <!-- top vertical leg (up) at inner end -->
+      <rect x="28.8333" y="16.8334" width="0.1667" height="2.8333"/>
     
-      <!-- RIGHT hash X (33.7917): horizontal goes LEFT toward dot -->
-      <rect x="29.7917" y="19.6667" width="4" height="0.1667"/>
-      <rect x="33.7917" y="16.8334" width="0.1667" height="2.8333"/>
-    
-      <rect x="29.7917" y="21.1667" width="4" height="0.1667"/>
-      <rect x="33.7917" y="21.1667" width="0.1667" height="2.8333"/>
+      <!-- bottom horizontal -->
+      <rect x="25" y="21.1667" width="4" height="0.1667"/>
+      <!-- bottom vertical leg (down) -->
+      <rect x="28.8333" y="21.1667" width="0.1667" height="2.8333"/>
     
     
-      <!-- Spot B: (31, 64.5) -->
-      <!-- yTopH=63.66665, yBotH=65.16665 -->
-      <rect x="28.2083" y="63.6667" width="4" height="0.1667"/>
-      <rect x="28.2083" y="60.8334" width="0.1667" height="2.8333"/>
+      <!-- Spot: (31, 64.5) -->
+      <!-- Right-side Ls (innerEndX = 33) -->
+      <rect x="33" y="63.6667" width="4" height="0.1667"/>
+      <rect x="33" y="60.8334" width="0.1667" height="2.8333"/>
     
-      <rect x="28.2083" y="65.1667" width="4" height="0.1667"/>
-      <rect x="28.2083" y="65.1667" width="0.1667" height="2.8333"/>
+      <rect x="33" y="65.1667" width="4" height="0.1667"/>
+      <rect x="33" y="65.1667" width="0.1667" height="2.8333"/>
     
-      <rect x="29.7917" y="63.6667" width="4" height="0.1667"/>
-      <rect x="33.7917" y="60.8334" width="0.1667" height="2.8333"/>
+      <!-- Left-side Ls (innerEndX = 29) -->
+      <rect x="25" y="63.6667" width="4" height="0.1667"/>
+      <rect x="28.8333" y="60.8334" width="0.1667" height="2.8333"/>
     
-      <rect x="29.7917" y="65.1667" width="4" height="0.1667"/>
-      <rect x="33.7917" y="65.1667" width="0.1667" height="2.8333"/>
-    
-    
-      <!-- ===================== RIGHT END ZONE (cx=169) ===================== -->
-      <!-- Spot C: (169, 20.5) -->
-      <!-- hash Xs: 166.2083 (left), 171.7917 (right) -->
-    
-      <!-- LEFT hash X (166.2083): horizontal goes RIGHT toward dot -->
-      <rect x="166.2083" y="19.6667" width="4" height="0.1667"/>
-      <rect x="166.2083" y="16.8334" width="0.1667" height="2.8333"/>
-    
-      <rect x="166.2083" y="21.1667" width="4" height="0.1667"/>
-      <rect x="166.2083" y="21.1667" width="0.1667" height="2.8333"/>
-    
-      <!-- RIGHT hash X (171.7917): horizontal goes LEFT toward dot -->
-      <rect x="167.7917" y="19.6667" width="4" height="0.1667"/>
-      <rect x="171.7917" y="16.8334" width="0.1667" height="2.8333"/>
-    
-      <rect x="167.7917" y="21.1667" width="4" height="0.1667"/>
-      <rect x="171.7917" y="21.1667" width="0.1667" height="2.8333"/>
+      <rect x="25" y="65.1667" width="4" height="0.1667"/>
+      <rect x="28.8333" y="65.1667" width="0.1667" height="2.8333"/>
     
     
-      <!-- Spot D: (169, 64.5) -->
-      <rect x="166.2083" y="63.6667" width="4" height="0.1667"/>
-      <rect x="166.2083" y="60.8334" width="0.1667" height="2.8333"/>
+      <!-- ===== RIGHT END ZONE SPOTS (cx=169) ===== -->
     
-      <rect x="166.2083" y="65.1667" width="4" height="0.1667"/>
-      <rect x="166.2083" y="65.1667" width="0.1667" height="2.8333"/>
+      <!-- Spot: (169, 20.5) -->
+      <!-- Right-side Ls (innerEndX = 171) -->
+      <rect x="171" y="19.6667" width="4" height="0.1667"/>
+      <rect x="171" y="16.8334" width="0.1667" height="2.8333"/>
     
-      <rect x="167.7917" y="63.6667" width="4" height="0.1667"/>
-      <rect x="171.7917" y="60.8334" width="0.1667" height="2.8333"/>
+      <rect x="171" y="21.1667" width="4" height="0.1667"/>
+      <rect x="171" y="21.1667" width="0.1667" height="2.8333"/>
     
-      <rect x="167.7917" y="65.1667" width="4" height="0.1667"/>
-      <rect x="171.7917" y="65.1667" width="0.1667" height="2.8333"/>
+      <!-- Left-side Ls (innerEndX = 167) -->
+      <rect x="163" y="19.6667" width="4" height="0.1667"/>
+      <rect x="166.8333" y="16.8334" width="0.1667" height="2.8333"/>
+    
+      <rect x="163" y="21.1667" width="4" height="0.1667"/>
+      <rect x="166.8333" y="21.1667" width="0.1667" height="2.8333"/>
+    
+    
+      <!-- Spot: (169, 64.5) -->
+      <!-- Right-side Ls (innerEndX = 171) -->
+      <rect x="171" y="63.6667" width="4" height="0.1667"/>
+      <rect x="171" y="60.8334" width="0.1667" height="2.8333"/>
+    
+      <rect x="171" y="65.1667" width="4" height="0.1667"/>
+      <rect x="171" y="65.1667" width="0.1667" height="2.8333"/>
+    
+      <!-- Left-side Ls (innerEndX = 167) -->
+      <rect x="163" y="63.6667" width="4" height="0.1667"/>
+      <rect x="166.8333" y="60.8334" width="0.1667" height="2.8333"/>
+    
+      <rect x="163" y="65.1667" width="4" height="0.1667"/>
+      <rect x="166.8333" y="65.1667" width="0.1667" height="2.8333"/>
     </g>
 
 
