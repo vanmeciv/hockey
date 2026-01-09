@@ -26,7 +26,17 @@
   .dot.away { background:#60a5fa; }
 
   main { padding:12px 12px 220px; }
-  #rink { width:100%; height:auto; background:#0b1220; border-radius:18px; border:1px solid #1f2937; touch-action:manipulation; }
+
+  /* IMPORTANT: make the svg background transparent so clipped corners reveal page background */
+  #rink {
+    width:100%;
+    height:auto;
+    background:transparent;
+    border-radius:18px;
+    border:1px solid #1f2937;
+    touch-action:manipulation;
+    display:block;
+  }
 
   .hint { font-size:12px; color:#9ca3af; margin-top:6px; }
   .events { margin-top:12px; display:flex; flex-direction:column; gap:6px; }
@@ -79,45 +89,67 @@
 
 <!-- NHL regulation rink (200 x 85 feet). Goal dots removed. -->
 <svg id="rink" viewBox="0 0 200 85" preserveAspectRatio="xMidYMid meet" aria-label="NHL regulation rink (feet)">
-  <rect x="0" y="0" width="200" height="85" rx="28" ry="28"
-        fill="none" stroke="#e5e7eb" stroke-width="0.8"/>
+  <defs>
+    <!-- Clip everything to the true ice/boards shape (corners shaved off) -->
+    <clipPath id="iceClip">
+      <rect x="0" y="0" width="200" height="85" rx="28" ry="28"></rect>
+    </clipPath>
+  </defs>
 
-  <rect x="10.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
-  <rect x="188.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
+  <!-- Everything inside this group is clipped to the rink shape -->
+  <g clip-path="url(#iceClip)">
+    <!-- Fill the ice surface (so corners are truly removed, but the inside remains filled) -->
+    <rect x="0" y="0" width="200" height="85" rx="28" ry="28" fill="#0b1220"></rect>
 
-  <rect x="74.5"  y="0" width="1" height="85" fill="#3b82f6"/>
-  <rect x="124.5" y="0" width="1" height="85" fill="#3b82f6"/>
+    <!-- Boards outline -->
+    <rect x="0" y="0" width="200" height="85" rx="28" ry="28"
+          fill="none" stroke="#e5e7eb" stroke-width="0.8"/>
 
-  <rect x="99.5" y="0" width="1" height="85" fill="#ef4444"/>
+    <!-- Goal lines -->
+    <rect x="10.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
+    <rect x="188.9167" y="0" width="0.1667" height="85" fill="#ef4444"/>
 
-  <circle cx="100" cy="42.5" r="15" fill="none" stroke="#3b82f6" stroke-width="0.1667"/>
-  <circle cx="100" cy="42.5" r="0.5" fill="#3b82f6"/>
+    <!-- Blue lines -->
+    <rect x="74.5"  y="0" width="1" height="85" fill="#3b82f6"/>
+    <rect x="124.5" y="0" width="1" height="85" fill="#3b82f6"/>
 
-  <g fill="none" stroke="#ef4444" stroke-width="0.1667">
-    <circle cx="80"  cy="20.5" r="1"/><circle cx="80"  cy="64.5" r="1"/>
-    <circle cx="120" cy="20.5" r="1"/><circle cx="120" cy="64.5" r="1"/>
+    <!-- Center red line -->
+    <rect x="99.5" y="0" width="1" height="85" fill="#ef4444"/>
+
+    <!-- Center circle + dot -->
+    <circle cx="100" cy="42.5" r="15" fill="none" stroke="#3b82f6" stroke-width="0.1667"/>
+    <circle cx="100" cy="42.5" r="0.5" fill="#3b82f6"/>
+
+    <!-- Neutral-zone faceoff spots -->
+    <g fill="none" stroke="#ef4444" stroke-width="0.1667">
+      <circle cx="80"  cy="20.5" r="1"/><circle cx="80"  cy="64.5" r="1"/>
+      <circle cx="120" cy="20.5" r="1"/><circle cx="120" cy="64.5" r="1"/>
+    </g>
+
+    <!-- End-zone faceoff circles -->
+    <g fill="none" stroke="#ef4444" stroke-width="0.1667">
+      <circle cx="31"  cy="20.5" r="15"/><circle cx="31"  cy="64.5" r="15"/>
+      <circle cx="169" cy="20.5" r="15"/><circle cx="169" cy="64.5" r="15"/>
+    </g>
+
+    <!-- End-zone faceoff dots -->
+    <g fill="#ef4444">
+      <circle cx="31"  cy="20.5" r="1"/><circle cx="31"  cy="64.5" r="1"/>
+      <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
+    </g>
+
+    <!-- Goal creases -->
+    <path d="M 11 38.5 L 15.5 38.5 A 6 6 0 0 1 15.5 46.5 L 11 46.5"
+          fill="none" stroke="#ef4444" stroke-width="0.1667"/>
+    <path d="M 189 38.5 L 184.5 38.5 A 6 6 0 0 0 184.5 46.5 L 189 46.5"
+          fill="none" stroke="#ef4444" stroke-width="0.1667"/>
+
+    <!-- Possession-change geometry (behind symbols) -->
+    <g id="possessionChangeLines"></g>
+
+    <!-- Event markers -->
+    <g id="markers"></g>
   </g>
-
-  <g fill="none" stroke="#ef4444" stroke-width="0.1667">
-    <circle cx="31"  cy="20.5" r="15"/><circle cx="31"  cy="64.5" r="15"/>
-    <circle cx="169" cy="20.5" r="15"/><circle cx="169" cy="64.5" r="15"/>
-  </g>
-
-  <g fill="#ef4444">
-    <circle cx="31"  cy="20.5" r="1"/><circle cx="31"  cy="64.5" r="1"/>
-    <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
-  </g>
-
-  <path d="M 11 38.5 L 15.5 38.5 A 6 6 0 0 1 15.5 46.5 L 11 46.5"
-        fill="none" stroke="#ef4444" stroke-width="0.1667"/>
-  <path d="M 189 38.5 L 184.5 38.5 A 6 6 0 0 0 184.5 46.5 L 189 46.5"
-        fill="none" stroke="#ef4444" stroke-width="0.1667"/>
-
-  <!-- Possession-change geometry (behind symbols) -->
-  <g id="possessionChangeLines"></g>
-
-  <!-- Event markers -->
-  <g id="markers"></g>
 </svg>
 
 <div class="hint" id="hint">Tap an event, then tap the rink to place it (optional). Possession Change requires 2 taps (loss → gain).</div>
@@ -155,24 +187,15 @@
 </div>
 
 <script>
-const SYMBOL = {
-  goal:"●",
-  shot:"△",
-  hit:"✖",
-  penalty:"▢",
-  pos_change:"⇄", // rendered twice (loss + gain)
-  note:"✎"
-};
-
+const SYMBOL = { goal:"●", shot:"△", hit:"✖", penalty:"▢", pos_change:"⇄", note:"✎" };
 const TEAM_COLOR = { home:"#22c55e", away:"#60a5fa" };
 
 const state = {
   clockTenths: 20 * 60 * 10,
   running: false,
   events: [],
-  // pending placement: { event, stage } where stage is "single" or "loss"/"gain"
   pending: null,
-  teamContext: "home" // team assigned to newly logged events (and LOSS side of possession change)
+  teamContext: "home"
 };
 
 const rink = document.getElementById("rink");
@@ -225,18 +248,14 @@ function svgPointFromClick(evt) {
   };
 }
 
-/* ===== rendering ===== */
 function render() {
   document.getElementById("clock").textContent = formatTime(state.clockTenths);
 
-  // timeline
   eventsEl.innerHTML = state.events.map(e => {
     if (e.type === "pos_change") {
-      const lossColor = TEAM_COLOR[e.lossTeam];
-      const gainColor = TEAM_COLOR[e.gainTeam];
       const placed = (e.lossXY && e.gainXY) ? "placed" : "unplaced";
       return `<div class="event">
-        <strong style="color:${lossColor}">⇄</strong>
+        <strong style="color:${TEAM_COLOR[e.lossTeam]}">⇄</strong>
         <span>POS CHANGE @ ${formatTime(e.time)}</span>
         <span class="pill ${e.lossTeam}">${e.lossTeam.toUpperCase()} LOSS</span>
         <span class="pill ${e.gainTeam}">${e.gainTeam.toUpperCase()} GAIN</span>
@@ -244,10 +263,9 @@ function render() {
       </div>`;
     } else {
       const sym = SYMBOL[e.type] ?? "?";
-      const symColor = TEAM_COLOR[e.team] ?? "#e5e7eb";
       const placed = e.xy ? "placed" : "unplaced";
       return `<div class="event">
-        <strong style="color:${symColor}">${sym}</strong>
+        <strong style="color:${TEAM_COLOR[e.team] ?? "#e5e7eb"}">${sym}</strong>
         <span>${e.type.toUpperCase()} @ ${formatTime(e.time)}</span>
         <span class="pill ${e.team}">${e.team.toUpperCase()}</span>
         <span class="meta">${placed}</span>
@@ -255,14 +273,13 @@ function render() {
     }
   }).join("");
 
-  // possession-change geometry (lines)
+  // lines
   pcLines.innerHTML = "";
   const chronological = [...state.events].reverse();
   for (const e of chronological) {
     if (e.type !== "pos_change") continue;
     if (!e.lossXY || !e.gainXY) continue;
 
-    // split line at midpoint: lossTeam color then gainTeam color
     const mid = { x:(e.lossXY.x + e.gainXY.x)/2, y:(e.lossXY.y + e.gainXY.y)/2 };
 
     const l1 = document.createElementNS("http://www.w3.org/2000/svg","line");
@@ -285,11 +302,10 @@ function render() {
     pcLines.appendChild(l2);
   }
 
-  // markers (symbols)
+  // markers
   markers.innerHTML = "";
   for (const e of chronological) {
     if (e.type === "pos_change") {
-      // draw loss symbol + gain symbol
       if (e.lossXY) {
         const t = document.createElementNS("http://www.w3.org/2000/svg","text");
         t.setAttribute("x", e.lossXY.x); t.setAttribute("y", e.lossXY.y);
@@ -324,7 +340,6 @@ function render() {
   }
 }
 
-/* ===== log buttons ===== */
 document.querySelectorAll(".grid button").forEach(btn => {
   btn.addEventListener("click", () => {
     const type = btn.dataset.type;
@@ -333,23 +348,16 @@ document.querySelectorAll(".grid button").forEach(btn => {
       const lossTeam = state.teamContext;
       const gainTeam = otherTeam(lossTeam);
 
-      const ev = {
-        type:"pos_change",
-        time: state.clockTenths,
-        lossTeam, gainTeam,
-        lossXY: null,
-        gainXY: null
-      };
-
+      const ev = { type:"pos_change", time: state.clockTenths, lossTeam, gainTeam, lossXY:null, gainXY:null };
       state.events.unshift(ev);
       state.pending = { event: ev, stage: "loss" };
-      hint.textContent = "POS CHANGE: tap LOSS location (where old team loses puck).";
+
+      hint.textContent = "POS CHANGE: tap LOSS location (old team loses puck).";
       showToast(`POS CHANGE (${lossTeam.toUpperCase()} → ${gainTeam.toUpperCase()}): place LOSS`);
       render();
       return;
     }
 
-    // normal (single-point) event
     const ev = { type, time: state.clockTenths, team: state.teamContext, xy: null };
     state.events.unshift(ev);
     state.pending = { event: ev, stage: "single" };
@@ -359,13 +367,8 @@ document.querySelectorAll(".grid button").forEach(btn => {
   });
 });
 
-/* ===== rink click placement ===== */
 rink.addEventListener("click", (e) => {
-  if (!state.pending) {
-    showToast("No pending event to place");
-    return;
-  }
-
+  if (!state.pending) { showToast("No pending event to place"); return; }
   const pt = svgPointFromClick(e);
   const ev = state.pending.event;
 
@@ -382,7 +385,7 @@ rink.addEventListener("click", (e) => {
     if (state.pending.stage === "loss") {
       ev.lossXY = pt;
       state.pending.stage = "gain";
-      hint.textContent = "POS CHANGE: tap GAIN location (where new team controls puck).";
+      hint.textContent = "POS CHANGE: tap GAIN location (new team controls puck).";
       showToast("Now place GAIN");
       render();
       return;
@@ -391,7 +394,6 @@ rink.addEventListener("click", (e) => {
       ev.gainXY = pt;
       state.pending = null;
 
-      // After a possession change completes, the new team becomes the context for subsequent events.
       state.teamContext = ev.gainTeam;
       updateTeamUI();
 
@@ -403,7 +405,6 @@ rink.addEventListener("click", (e) => {
   }
 });
 
-/* ===== top controls ===== */
 document.getElementById("toggleTeam").addEventListener("click", () => toggleTeamContext(true));
 teamContextPill.addEventListener("click", () => toggleTeamContext(true));
 
@@ -412,7 +413,6 @@ document.getElementById("startStop").addEventListener("click", () => {
   document.getElementById("startStop").textContent = state.running ? "Pause" : "Start";
   showToast(state.running ? "Running" : "Paused");
 });
-
 document.getElementById("stop").addEventListener("click", () => {
   state.running = false;
   document.getElementById("startStop").textContent = "Start";
@@ -425,7 +425,6 @@ document.getElementById("undo").addEventListener("click", () => {
   showToast("Undo");
   render();
 });
-
 document.getElementById("clearPending").addEventListener("click", () => {
   state.pending = null;
   hint.textContent = "Tap an event, then tap the rink to place it (optional). Possession Change requires 2 taps (loss → gain).";
@@ -433,7 +432,6 @@ document.getElementById("clearPending").addEventListener("click", () => {
   render();
 });
 
-/* ===== time adjust ===== */
 document.querySelectorAll(".timeGrid button[data-dt]").forEach(btn => {
   btn.addEventListener("click", () => {
     state.clockTenths = Math.max(0, state.clockTenths + Number(btn.dataset.dt));
@@ -444,7 +442,6 @@ document.getElementById("set2000").addEventListener("click", () => { state.clock
 document.getElementById("set1500").addEventListener("click", () => { state.clockTenths = 15*60*10; render(); });
 document.getElementById("set0500").addEventListener("click", () => { state.clockTenths =  5*60*10; render(); });
 
-/* ===== tick every 0.1s ===== */
 setInterval(() => {
   if (state.running && state.clockTenths > 0) {
     state.clockTenths--;
@@ -452,7 +449,6 @@ setInterval(() => {
   }
 }, 100);
 
-/* init */
 updateTeamUI();
 render();
 </script>
