@@ -3,18 +3,28 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NHL Regulation Rink + Event Logger (0.1s)</title>
+<title>NHL Regulation Rink + Event Logger (0.1s, Team Possession)</title>
 
 <style>
   body { margin:0; background:#0b0f14; color:#e5e7eb; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
   header { padding:12px; border-bottom:1px solid #1f2937; background:#0b0f14; position:sticky; top:0; z-index:5; }
   .row { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
   .clock { font-size:28px; font-weight:800; letter-spacing:0.5px; }
-  .btnRow { display:flex; gap:8px; flex-wrap:wrap; }
+
+  .btnRow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   button { background:#1f2937; color:#e5e7eb; border:0; border-radius:10px; padding:10px 12px; font-weight:700; cursor:pointer; }
   button:active { background:#374151; }
 
-  main { padding:12px 12px 210px; }
+  .teamPill {
+    display:inline-flex; gap:8px; align-items:center;
+    padding:8px 10px; border:1px solid #1f2937; border-radius:999px;
+    background:#0b1220; color:#e5e7eb; font-weight:800; font-size:13px;
+  }
+  .dot { width:10px; height:10px; border-radius:999px; display:inline-block; }
+  .dot.home { background:#22c55e; } /* green */
+  .dot.away { background:#60a5fa; } /* blue */
+
+  main { padding:12px 12px 220px; }
   #rink { width:100%; height:auto; background:#0b1220; border-radius:18px; border:1px solid #1f2937; touch-action:manipulation; }
 
   .hint { font-size:12px; color:#9ca3af; margin-top:6px; }
@@ -25,6 +35,12 @@
   }
   .event strong { width:18px; display:inline-flex; justify-content:center; }
   .event .meta { color:#9ca3af; font-size:12px; margin-left:auto; }
+  .pill {
+    font-size:11px; padding:2px 8px; border-radius:999px;
+    border:1px solid #1f2937; background:#0b1220; color:#e5e7eb; font-weight:800;
+  }
+  .pill.home { border-color:#16a34a; }
+  .pill.away { border-color:#3b82f6; }
 
   .controls { position:fixed; bottom:0; left:0; right:0; padding:12px; background:#0b0f14; border-top:1px solid #1f2937; z-index:10; }
   .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
@@ -32,7 +48,7 @@
   .timeGrid button { padding:10px 8px; }
 
   .toast {
-    position:fixed; left:12px; right:12px; bottom:220px;
+    position:fixed; left:12px; right:12px; bottom:235px;
     background:#0b1220; border:1px solid #1f2937; border-radius:12px;
     padding:10px; font-weight:700; display:none; z-index:20;
   }
@@ -46,6 +62,11 @@
   <div class="row">
     <div class="clock" id="clock">20:00.0</div>
     <div class="btnRow">
+      <span class="teamPill" id="possTeamPill" title="Possession owner for next event (tap to toggle)">
+        <span class="dot home" id="possDot"></span>
+        <span id="possLabel">Home possession</span>
+      </span>
+      <button id="toggleTeam" title="Toggle possession owner (Home/Away)">Toggle</button>
       <button id="startStop">Start</button>
       <button id="undo">Undo</button>
       <button id="clearPending">Clear “place”</button>
@@ -76,32 +97,32 @@
   <circle cx="100" cy="42.5" r="15" fill="none" stroke="#3b82f6" stroke-width="0.1667"/>
   <circle cx="100" cy="42.5" r="0.5" fill="#3b82f6"/>
 
-  <!-- Neutral-zone faceoff spots: diameter 2' (r=1'), 5' from each blue line, 44' apart across width -->
-  <!-- y = 42.5 ± 22 => 20.5 and 64.5; x = 80 (75+5) and 120 (125-5) -->
+  <!-- Neutral-zone faceoff spots -->
   <g fill="none" stroke="#ef4444" stroke-width="0.1667">
     <circle cx="80"  cy="20.5" r="1"/><circle cx="80"  cy="64.5" r="1"/>
     <circle cx="120" cy="20.5" r="1"/><circle cx="120" cy="64.5" r="1"/>
   </g>
 
-  <!-- End-zone faceoff circles: radius 15'; centers: x = 31 and 169; y = 20.5 and 64.5 -->
+  <!-- End-zone faceoff circles -->
   <g fill="none" stroke="#ef4444" stroke-width="0.1667">
     <circle cx="31"  cy="20.5" r="15"/><circle cx="31"  cy="64.5" r="15"/>
     <circle cx="169" cy="20.5" r="15"/><circle cx="169" cy="64.5" r="15"/>
   </g>
 
-  <!-- End-zone faceoff dots: diameter 2' (r=1') -->
+  <!-- End-zone faceoff dots -->
   <g fill="#ef4444">
     <circle cx="31"  cy="20.5" r="1"/><circle cx="31"  cy="64.5" r="1"/>
     <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
   </g>
 
-  <!-- Goal creases (your approved geometry) -->
+  <!-- Goal creases -->
   <path d="M 11 38.5 L 15.5 38.5 A 6 6 0 0 1 15.5 46.5 L 11 46.5"
         fill="none" stroke="#ef4444" stroke-width="0.1667"/>
   <path d="M 189 38.5 L 184.5 38.5 A 6 6 0 0 0 184.5 46.5 L 189 46.5"
         fill="none" stroke="#ef4444" stroke-width="0.1667"/>
 
-  <!-- NOTE: goal dots in front of crease were removed per your request -->
+  <!-- Possession path lines (behind symbols) -->
+  <g id="possessionLines"></g>
 
   <!-- Event markers (on top) -->
   <g id="markers"></g>
@@ -152,19 +173,31 @@ const SYMBOL = {
   note: "✎"
 };
 
+/* ===== Team colors (for possession ⇄ and possession path) ===== */
+const TEAM_COLOR = {
+  home: "#22c55e", // green
+  away: "#60a5fa"  // blue
+};
+
 /* ===== State: time in tenths ===== */
 const state = {
   clockTenths: 20 * 60 * 10,
   running: false,
   events: [],
-  pendingEvent: null
+  pendingEvent: null,
+  possessionTeam: "home" // owner for next logged event (esp. possession)
 };
 
 const rink = document.getElementById("rink");
 const markers = document.getElementById("markers");
+const possessionLines = document.getElementById("possessionLines");
 const eventsEl = document.getElementById("events");
 const toast = document.getElementById("toast");
 const hint = document.getElementById("hint");
+
+const possDot = document.getElementById("possDot");
+const possLabel = document.getElementById("possLabel");
+const possTeamPill = document.getElementById("possTeamPill");
 
 function formatTime(tenths) {
   const totalSeconds = Math.floor(tenths / 10);
@@ -182,32 +215,80 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
 }
 
+function updatePossessionUI() {
+  const team = state.possessionTeam;
+  possDot.classList.toggle("home", team === "home");
+  possDot.classList.toggle("away", team === "away");
+  possLabel.textContent = team === "home" ? "Home possession" : "Away possession";
+}
+
+function togglePossessionTeam() {
+  state.possessionTeam = (state.possessionTeam === "home") ? "away" : "home";
+  updatePossessionUI();
+  showToast(`Possession set: ${state.possessionTeam.toUpperCase()}`);
+}
+
+/* ===== Render ===== */
 function render() {
   document.getElementById("clock").textContent = formatTime(state.clockTenths);
 
+  // timeline
   eventsEl.innerHTML = state.events.map((e, idx) => {
     const sym = SYMBOL[e.type] ?? "?";
     const placed = e.xy ? "placed" : "unplaced";
+    const teamPill = e.type === "possession"
+      ? `<span class="pill ${e.team}">${e.team.toUpperCase()}</span>`
+      : "";
     return `<div class="event" data-idx="${idx}">
-      <strong>${sym}</strong>
+      <strong style="color:${e.type === "possession" ? TEAM_COLOR[e.team] : "#e5e7eb"}">${sym}</strong>
       <span>${e.type.toUpperCase()} @ ${formatTime(e.time)}</span>
+      ${teamPill}
       <span class="meta">${placed}</span>
     </div>`;
   }).join("");
 
+  // possession path lines
+  possessionLines.innerHTML = "";
+  const chronological = [...state.events].reverse();
+  const possPlaced = chronological.filter(ev => ev.type === "possession" && ev.xy);
+
+  for (let i = 1; i < possPlaced.length; i++) {
+    const a = possPlaced[i - 1];
+    const b = possPlaced[i];
+
+    // color the segment by the *starting* possession owner (a.team)
+    const segColor = TEAM_COLOR[a.team] ?? "#e5e7eb";
+
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", a.xy.x);
+    line.setAttribute("y1", a.xy.y);
+    line.setAttribute("x2", b.xy.x);
+    line.setAttribute("y2", b.xy.y);
+    line.setAttribute("stroke", segColor);
+    line.setAttribute("stroke-width", "0.8");
+    line.setAttribute("opacity", "0.80");
+    line.setAttribute("stroke-linecap", "round");
+    possessionLines.appendChild(line);
+  }
+
+  // markers (symbols)
   markers.innerHTML = "";
-  // draw oldest first so newest sits on top
-  const ordered = [...state.events].reverse();
+  const ordered = [...state.events].reverse(); // draw older first
   for (const e of ordered) {
     if (!e.xy) continue;
+
     const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
     t.setAttribute("x", e.xy.x);
     t.setAttribute("y", e.xy.y);
     t.setAttribute("font-size", "4");
-    t.setAttribute("fill", "#e5e7eb");
     t.setAttribute("text-anchor", "middle");
     t.setAttribute("dominant-baseline", "middle");
     t.textContent = SYMBOL[e.type] ?? "?";
+
+    // team-colored possession symbol; other symbols stay white
+    const fill = (e.type === "possession") ? (TEAM_COLOR[e.team] ?? "#e5e7eb") : "#e5e7eb";
+    t.setAttribute("fill", fill);
+
     markers.appendChild(t);
   }
 }
@@ -215,12 +296,25 @@ function render() {
 /* ===== Log event (arm placement) ===== */
 document.querySelectorAll(".grid button").forEach(btn => {
   btn.addEventListener("click", () => {
-    const evt = { type: btn.dataset.type, time: state.clockTenths, xy: null };
+    const type = btn.dataset.type;
+
+    const evt = {
+      type,
+      time: state.clockTenths,
+      xy: null,
+      // only possession events carry a team (home/away)
+      team: (type === "possession") ? state.possessionTeam : null
+    };
+
     state.events.unshift(evt);
     state.pendingEvent = evt;
 
     hint.textContent = "Now tap the rink to place that event (optional).";
-    showToast(`${(SYMBOL[evt.type] ?? "?")} ${evt.type.toUpperCase()} logged`);
+    if (type === "possession") {
+      showToast(`${SYMBOL[type]} ${type.toUpperCase()} (${evt.team.toUpperCase()}) logged`);
+    } else {
+      showToast(`${SYMBOL[type]} ${type.toUpperCase()} logged`);
+    }
     render();
   });
 });
@@ -243,6 +337,10 @@ rink.addEventListener("click", (e) => {
   showToast("Placed");
   render();
 });
+
+/* ===== Possession team toggle ===== */
+document.getElementById("toggleTeam").addEventListener("click", togglePossessionTeam);
+possTeamPill.addEventListener("click", togglePossessionTeam);
 
 /* ===== Clock controls ===== */
 document.getElementById("startStop").addEventListener("click", () => {
@@ -292,6 +390,8 @@ setInterval(() => {
   }
 }, 100);
 
+/* init */
+updatePossessionUI();
 render();
 </script>
 
