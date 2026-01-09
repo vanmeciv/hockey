@@ -134,51 +134,37 @@
       <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
     </g>
 
-        <!-- NHL end-zone faceoff hash marks:
-         2' long, 2" wide, and 5'7" apart (center-to-center),
-         at the outer edge (left/right sides) of each end-zone faceoff circle,
-         parallel to the goal line (vertical). -->
+    <!-- NEW: End-zone faceoff hash marks (2' long, 2" wide, 5'7" apart) -->
+    <!-- Oriented parallel to goal line => vertical in this viewBox -->
     <g id="hashMarks" fill="#ef4444">
-      <!-- constants (feet) -->
-      <!-- markW = 2"  = 0.1667 -->
-      <!-- markH = 2'  = 2 -->
-      <!-- sep   = 5'7"= 5.5833 ; offset = sep/2 = 2.7917 -->
-      <!-- r     = 15' (circle radius) -->
-    
-      <!-- helpers by substitution:
-           left side xL = cx - r ; right side xR = cx + r
-           rect x = sideX - markW/2
-           upper mark centerY = cy - offset ; lower = cy + offset
-           rect y = centerY - markH/2
+      <!-- constants:
+           markW = 2" = 0.1667 ft
+           markH = 2' = 2 ft
+           separation = 5'7" = 5.5833 ft (center-to-center)
+           x offsets around each faceoff spot x: ±(sep/2)=±2.7917
+           y positions: just outside circle toward boards:
+             top circles: y = (cy - 15) - 1.0  => start at 4.5
+             bottom circles: y = (cy + 15) - 1.0 => start at 78.5
       -->
-    
-      <!-- Circle centers: (31,20.5) (31,64.5) (169,20.5) (169,64.5) -->
-    
-      <!-- (31, 20.5) -->
-      <rect x="15.9167"  y="16.7083" width="0.1667" height="2"/>
-      <rect x="15.9167"  y="22.2917" width="0.1667" height="2"/>
-      <rect x="45.9167"  y="16.7083" width="0.1667" height="2"/>
-      <rect x="45.9167"  y="22.2917" width="0.1667" height="2"/>
-    
-      <!-- (31, 64.5) -->
-      <rect x="15.9167"  y="60.7083" width="0.1667" height="2"/>
-      <rect x="15.9167"  y="66.2917" width="0.1667" height="2"/>
-      <rect x="45.9167"  y="60.7083" width="0.1667" height="2"/>
-      <rect x="45.9167"  y="66.2917" width="0.1667" height="2"/>
-    
-      <!-- (169, 20.5) -->
-      <rect x="153.9167" y="16.7083" width="0.1667" height="2"/>
-      <rect x="153.9167" y="22.2917" width="0.1667" height="2"/>
-      <rect x="183.9167" y="16.7083" width="0.1667" height="2"/>
-      <rect x="183.9167" y="22.2917" width="0.1667" height="2"/>
-    
-      <!-- (169, 64.5) -->
-      <rect x="153.9167" y="60.7083" width="0.1667" height="2"/>
-      <rect x="153.9167" y="66.2917" width="0.1667" height="2"/>
-      <rect x="183.9167" y="60.7083" width="0.1667" height="2"/>
-      <rect x="183.9167" y="66.2917" width="0.1667" height="2"/>
-    </g>
 
+      <!-- LEFT END ZONE (x=31) -->
+      <!-- upper circle (cy=20.5): y=4.5 -->
+      <rect x="28.2083" y="4.5"  width="0.1667" height="2"/>
+      <rect x="33.7917" y="4.5"  width="0.1667" height="2"/>
+
+      <!-- lower circle (cy=64.5): y=78.5 -->
+      <rect x="28.2083" y="78.5" width="0.1667" height="2"/>
+      <rect x="33.7917" y="78.5" width="0.1667" height="2"/>
+
+      <!-- RIGHT END ZONE (x=169) -->
+      <!-- upper circle (cy=20.5): y=4.5 -->
+      <rect x="166.2083" y="4.5"  width="0.1667" height="2"/>
+      <rect x="171.7917" y="4.5"  width="0.1667" height="2"/>
+
+      <!-- lower circle (cy=64.5): y=78.5 -->
+      <rect x="166.2083" y="78.5" width="0.1667" height="2"/>
+      <rect x="171.7917" y="78.5" width="0.1667" height="2"/>
+    </g>
 
     <!-- Goal creases -->
     <path d="M 11 38.5 L 15.5 38.5 A 6 6 0 0 1 15.5 46.5 L 11 46.5"
