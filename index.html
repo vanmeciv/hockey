@@ -134,37 +134,49 @@
       <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
     </g>
 
-    <!-- NEW: End-zone faceoff hash marks (2' long, 2" wide, 5'7" apart) -->
-    <!-- Oriented parallel to goal line => vertical in this viewBox -->
-    <g id="hashMarks" fill="#ef4444">
-      <!-- constants:
-           markW = 2" = 0.1667 ft
-           markH = 2' = 2 ft
-           separation = 5'7" = 5.5833 ft (center-to-center)
-           x offsets around each faceoff spot x: ±(sep/2)=±2.7917
-           y positions: just outside circle toward boards:
-             top circles: y = (cy - 15) - 1.0  => start at 4.5
-             bottom circles: y = (cy + 15) - 1.0 => start at 78.5
+    <!-- NEW: Inner “L” faceoff restraint markings (NHL dimensions) -->
+    <!-- From NHL rule text: 1' from outer edge of spot, two 4' lines 18" apart, plus 2'10" perpendicular; 2" wide -->
+    <g id="innerFaceoffLs" fill="none" stroke="#ef4444" stroke-width="0.1667" stroke-linecap="square">
+      <!-- constants in feet for your 200x85 viewBox:
+           lineW = 2"  = 0.1667
+           offsetFromSpotEdge = 1' ; spot radius = 1' => offset from center = 2'
+           horizLen = 4'
+           sep = 18" = 1.5'
+           vertLen = 2'10" = 2.8333'
       -->
-
-      <!-- LEFT END ZONE (x=31) -->
-      <!-- upper circle (cy=20.5): y=4.5 -->
-      <rect x="28.2083" y="4.5"  width="0.1667" height="2"/>
-      <rect x="33.7917" y="4.5"  width="0.1667" height="2"/>
-
-      <!-- lower circle (cy=64.5): y=78.5 -->
-      <rect x="28.2083" y="78.5" width="0.1667" height="2"/>
-      <rect x="33.7917" y="78.5" width="0.1667" height="2"/>
-
-      <!-- RIGHT END ZONE (x=169) -->
-      <!-- upper circle (cy=20.5): y=4.5 -->
-      <rect x="166.2083" y="4.5"  width="0.1667" height="2"/>
-      <rect x="171.7917" y="4.5"  width="0.1667" height="2"/>
-
-      <!-- lower circle (cy=64.5): y=78.5 -->
-      <rect x="166.2083" y="78.5" width="0.1667" height="2"/>
-      <rect x="171.7917" y="78.5" width="0.1667" height="2"/>
+    
+      <!-- Helper note:
+           For each faceoff spot (cx,cy), we draw TWO “L” marks on the left and TWO on the right.
+           Left side points toward decreasing x, right side toward increasing x.
+      -->
+    
+      <!-- Spot: (31,20.5) -->
+      <!-- Left side (toward x-) -->
+      <path d="M 29 19.75 H 25 V 22.5833" />
+      <path d="M 29 21.25 H 25 V 18.4167" />
+      <!-- Right side (toward x+) -->
+      <path d="M 33 19.75 H 37 V 22.5833" />
+      <path d="M 33 21.25 H 37 V 18.4167" />
+    
+      <!-- Spot: (31,64.5) -->
+      <path d="M 29 63.75 H 25 V 66.5833" />
+      <path d="M 29 65.25 H 25 V 62.4167" />
+      <path d="M 33 63.75 H 37 V 66.5833" />
+      <path d="M 33 65.25 H 37 V 62.4167" />
+    
+      <!-- Spot: (169,20.5) -->
+      <path d="M 167 19.75 H 163 V 22.5833" />
+      <path d="M 167 21.25 H 163 V 18.4167" />
+      <path d="M 171 19.75 H 175 V 22.5833" />
+      <path d="M 171 21.25 H 175 V 18.4167" />
+    
+      <!-- Spot: (169,64.5) -->
+      <path d="M 167 63.75 H 163 V 66.5833" />
+      <path d="M 167 65.25 H 163 V 62.4167" />
+      <path d="M 171 63.75 H 175 V 66.5833" />
+      <path d="M 171 65.25 H 175 V 62.4167" />
     </g>
+
 
     <!-- Goal creases -->
     <path d="M 11 38.5 L 15.5 38.5 A 6 6 0 0 1 15.5 46.5 L 11 46.5"
