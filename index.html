@@ -27,7 +27,6 @@
 
   main { padding:12px 12px 220px; }
 
-  /* IMPORTANT: make the svg background transparent so clipped corners reveal page background */
   #rink {
     width:100%;
     height:auto;
@@ -87,18 +86,15 @@
 
 <main>
 
-<!-- NHL regulation rink (200 x 85 feet). Goal dots removed. -->
 <svg id="rink" viewBox="0 0 200 85" preserveAspectRatio="xMidYMid meet" aria-label="NHL regulation rink (feet)">
   <defs>
-    <!-- Clip everything to the true ice/boards shape (corners shaved off) -->
     <clipPath id="iceClip">
       <rect x="0" y="0" width="200" height="85" rx="28" ry="28"></rect>
     </clipPath>
   </defs>
 
-  <!-- Everything inside this group is clipped to the rink shape -->
   <g clip-path="url(#iceClip)">
-    <!-- Fill the ice surface (so corners are truly removed, but the inside remains filled) -->
+    <!-- Ice fill -->
     <rect x="0" y="0" width="200" height="85" rx="28" ry="28" fill="#0b1220"></rect>
 
     <!-- Boards outline -->
@@ -136,6 +132,38 @@
     <g fill="#ef4444">
       <circle cx="31"  cy="20.5" r="1"/><circle cx="31"  cy="64.5" r="1"/>
       <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
+    </g>
+
+    <!-- NEW: End-zone faceoff hash marks (2' long, 2" wide, 5'7" apart) -->
+    <!-- Oriented parallel to goal line => vertical in this viewBox -->
+    <g id="hashMarks" fill="#ef4444">
+      <!-- constants:
+           markW = 2" = 0.1667 ft
+           markH = 2' = 2 ft
+           separation = 5'7" = 5.5833 ft (center-to-center)
+           x offsets around each faceoff spot x: ±(sep/2)=±2.7917
+           y positions: just outside circle toward boards:
+             top circles: y = (cy - 15) - 1.0  => start at 4.5
+             bottom circles: y = (cy + 15) - 1.0 => start at 78.5
+      -->
+
+      <!-- LEFT END ZONE (x=31) -->
+      <!-- upper circle (cy=20.5): y=4.5 -->
+      <rect x="28.2083" y="4.5"  width="0.1667" height="2"/>
+      <rect x="33.7917" y="4.5"  width="0.1667" height="2"/>
+
+      <!-- lower circle (cy=64.5): y=78.5 -->
+      <rect x="28.2083" y="78.5" width="0.1667" height="2"/>
+      <rect x="33.7917" y="78.5" width="0.1667" height="2"/>
+
+      <!-- RIGHT END ZONE (x=169) -->
+      <!-- upper circle (cy=20.5): y=4.5 -->
+      <rect x="166.2083" y="4.5"  width="0.1667" height="2"/>
+      <rect x="171.7917" y="4.5"  width="0.1667" height="2"/>
+
+      <!-- lower circle (cy=64.5): y=78.5 -->
+      <rect x="166.2083" y="78.5" width="0.1667" height="2"/>
+      <rect x="171.7917" y="78.5" width="0.1667" height="2"/>
     </g>
 
     <!-- Goal creases -->
@@ -273,7 +301,6 @@ function render() {
     }
   }).join("");
 
-  // lines
   pcLines.innerHTML = "";
   const chronological = [...state.events].reverse();
   for (const e of chronological) {
@@ -302,7 +329,6 @@ function render() {
     pcLines.appendChild(l2);
   }
 
-  // markers
   markers.innerHTML = "";
   for (const e of chronological) {
     if (e.type === "pos_change") {
