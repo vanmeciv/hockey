@@ -134,57 +134,50 @@
       <circle cx="169" cy="20.5" r="1"/><circle cx="169" cy="64.5" r="1"/>
     </g>
 
-    <!-- NEW: End-zone faceoff hash marks (2' long, 2" wide, 5'7" apart) -->
-    <!-- Oriented parallel to goal line => vertical in this viewBox -->
+        <!-- End-zone faceoff hash marks (2' long, 2" wide, 5'7" apart) -->
+    <!-- FIX: each mark starts at the circle edge and extends ONLY outward (no segment inside circle) -->
     <g id="hashMarks" fill="#ef4444">
       <!-- constants:
            markW = 2" = 0.1667 ft
            markH = 2' = 2 ft
-           separation = 5'7" = 5.5833 ft (center-to-center)
-           x offsets around each faceoff spot x: ±(sep/2)=±2.7917
-           y positions: just outside circle toward boards:
-             top circles: y = (cy - 15) - 1.0  => start at 4.5
-             bottom circles: y = (cy + 15) - 1.0 => start at 78.5
+           sep/2 = 2.7917 ft
+           circle radius = 15 ft
+           top circle edges: yTop=20.5-15=5.5, yBottom=20.5+15=35.5
+           bottom circle edges: yTop=64.5-15=49.5, yBottom=64.5+15=79.5
       -->
-
-      <!-- LEFT END ZONE (x=31) -->
-      <!-- upper circle (cy=20.5): y=4.5 -->
-      <rect x="28.2083" y="4.5"  width="0.1667" height="2"/>
-      <rect x="33.7917" y="4.5"  width="0.1667" height="2"/>
-
-      <!-- lower circle (cy=64.5): y=78.5 -->
-      <rect x="28.2083" y="78.5" width="0.1667" height="2"/>
-      <rect x="33.7917" y="78.5" width="0.1667" height="2"/>
-
-      <!-- RIGHT END ZONE (x=169) -->
-      <!-- upper circle (cy=20.5): y=4.5 -->
-      <rect x="166.2083" y="4.5"  width="0.1667" height="2"/>
-      <rect x="171.7917" y="4.5"  width="0.1667" height="2"/>
-
-      <!-- lower circle (cy=64.5): y=78.5 -->
-      <rect x="166.2083" y="78.5" width="0.1667" height="2"/>
-      <rect x="171.7917" y="78.5" width="0.1667" height="2"/>
-
-      <!-- INNER hash marks (directly across from the outer marks) -->
-
-      <!-- LEFT END ZONE (x=31) -->
-      <!-- upper circle inner (cy=20.5): across at y=34.5 -->
-      <rect x="28.2083" y="34.5" width="0.1667" height="2"/>
-      <rect x="33.7917" y="34.5" width="0.1667" height="2"/>
-      
-      <!-- lower circle inner (cy=64.5): across at y=48.5 -->
-      <rect x="28.2083" y="48.5" width="0.1667" height="2"/>
-      <rect x="33.7917" y="48.5" width="0.1667" height="2"/>
-      
-      <!-- RIGHT END ZONE (x=169) -->
-      <!-- upper circle inner (cy=20.5): across at y=34.5 -->
-      <rect x="166.2083" y="34.5" width="0.1667" height="2"/>
-      <rect x="171.7917" y="34.5" width="0.1667" height="2"/>
-      
-      <!-- lower circle inner (cy=64.5): across at y=48.5 -->
-      <rect x="166.2083" y="48.5" width="0.1667" height="2"/>
-      <rect x="171.7917" y="48.5" width="0.1667" height="2"/>
+    
+      <!-- OUTER hash marks (toward boards) -->
+      <!-- Top circles: outward is UP => y = 5.5 - 2 = 3.5 -->
+      <!-- Bottom circles: outward is DOWN => y = 79.5 -->
+      <!-- LEFT END ZONE (cx=31): x = 31 ± 2.7917 -->
+      <rect x="28.2083" y="3.5"  width="0.1667" height="2"/>
+      <rect x="33.7917" y="3.5"  width="0.1667" height="2"/>
+      <rect x="28.2083" y="79.5" width="0.1667" height="2"/>
+      <rect x="33.7917" y="79.5" width="0.1667" height="2"/>
+    
+      <!-- RIGHT END ZONE (cx=169): x = 169 ± 2.7917 -->
+      <rect x="166.2083" y="3.5"  width="0.1667" height="2"/>
+      <rect x="171.7917" y="3.5"  width="0.1667" height="2"/>
+      <rect x="166.2083" y="79.5" width="0.1667" height="2"/>
+      <rect x="171.7917" y="79.5" width="0.1667" height="2"/>
+    
+      <!-- INNER hash marks (toward center ice) -->
+      <!-- Top circles: inner side is LOWER edge (y=35.5), outward to center is DOWN => y = 35.5 -->
+      <!-- Bottom circles: inner side is UPPER edge (y=49.5), outward to center is UP => y = 49.5 - 2 = 47.5 -->
+    
+      <!-- LEFT END ZONE -->
+      <rect x="28.2083" y="35.5" width="0.1667" height="2"/>
+      <rect x="33.7917" y="35.5" width="0.1667" height="2"/>
+      <rect x="28.2083" y="47.5" width="0.1667" height="2"/>
+      <rect x="33.7917" y="47.5" width="0.1667" height="2"/>
+    
+      <!-- RIGHT END ZONE -->
+      <rect x="166.2083" y="35.5" width="0.1667" height="2"/>
+      <rect x="171.7917" y="35.5" width="0.1667" height="2"/>
+      <rect x="166.2083" y="47.5" width="0.1667" height="2"/>
+      <rect x="171.7917" y="47.5" width="0.1667" height="2"/>
     </g>
+
         <!-- NEW: End-zone faceoff interior "L" markings (NHL spec) -->
         <!-- Dimensions (feet): lineW=2"=0.1667, hLen=4, sep=18"=1.5, vLen=2'10"=2.8333
              Placement: inner end is 1' from outer edge of 2' diameter spot (spot radius=1'),
