@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NHL Regulation Rink + Event Logger (0.1s, Auto Possession Team)</title>
+<title>NHL Regulation Rink + Event Logger (0.1s, Team-Colored Events)</title>
 
 <style>
   body { margin:0; background:#0b0f14; color:#e5e7eb; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
@@ -63,11 +63,11 @@
   <div class="row">
     <div class="clock" id="clock">20:00.0</div>
     <div class="btnRow">
-      <span class="teamPill" id="possTeamPill" title="Next POSSESSION owner (tap to toggle)">
-        <span class="dot home" id="possDot"></span>
-        <span id="possLabel">Next possession: HOME</span>
+      <span class="teamPill" id="teamContextPill" title="Team context for next event (tap to toggle)">
+        <span class="dot home" id="teamDot"></span>
+        <span id="teamLabel">Team context: HOME</span>
       </span>
-      <button id="toggleTeam" title="Toggle next POSSESSION owner">Toggle</button>
+      <button id="toggleTeam" title="Toggle team context (Home/Away)">Toggle</button>
       <button id="startStop">Start</button>
       <button id="undo">Undo</button>
       <button id="clearPending">Clear “place”</button>
@@ -116,7 +116,7 @@
   <g id="markers"></g>
 </svg>
 
-<div class="hint" id="hint">Tap an event button, then tap the rink to place it (optional).</div>
+<div class="hint" id="hint">Tap an event, then tap the rink to place it (optional).</div>
 <div class="events" id="events"></div>
 
 </main>
@@ -159,7 +159,7 @@ const state = {
   running: false,
   events: [],
   pendingEvent: null,
-  possessionTeam: "home" // "next possession owner"
+  teamContext: "home" // team assigned to newly-logged events
 };
 
 const rink = document.getElementById("rink");
@@ -169,9 +169,9 @@ const eventsEl = document.getElementById("events");
 const toast = document.getElementById("toast");
 const hint = document.getElementById("hint");
 
-const possDot = document.getElementById("possDot");
-const possLabel = document.getElementById("possLabel");
-const possTeamPill = document.getElementById("possTeamPill");
+const teamDot = document.getElementById("teamDot");
+const teamLabel = document.getElementById("teamLabel");
+const teamContextPill = document.getElementById("teamContextPill");
 
 function formatTime(tenths) {
   const totalSeconds = Math.floor(tenths / 10);
@@ -189,17 +189,17 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
 }
 
-function updatePossessionUI() {
-  const team = state.possessionTeam;
-  possDot.classList.toggle("home", team === "home");
-  possDot.classList.toggle("away", team === "away");
-  possLabel.textContent = `Next possession: ${team.toUpperCase()}`;
+function updateTeamUI() {
+  const team = state.teamContext;
+  teamDot.classList.toggle("home", team === "home");
+  teamDot.classList.toggle("away", team === "away");
+  teamLabel.textContent = `Team context: ${team.toUpperCase()}`;
 }
 
-function togglePossessionTeam(show=true) {
-  state.possessionTeam = (state.possessionTeam === "home") ? "away" : "home";
-  updatePossessionUI();
-  if (show) showToast(`Next possession: ${state.possessionTeam.toUpperCase()}`);
+function toggleTeamContext(show=true) {
+  state.teamContext = (state.teamContext === "home") ? "away" : "home";
+  updateTeamUI();
+  if (show) showToast(`Team context: ${state.teamContext.toUpperCase()}`);
 }
 
 function render() {
@@ -208,8 +208,8 @@ function render() {
   eventsEl.innerHTML = state.events.map((e) => {
     const sym = SYMBOL[e.type] ?? "?";
     const placed = e.xy ? "placed" : "unplaced";
-    const teamPill = e.type === "possession" ? `<span class="pill ${e.team}">${e.team.toUpperCase()}</span>` : "";
-    const symColor = (e.type === "possession") ? (TEAM_COLOR[e.team] ?? "#e5e7eb") : "#e5e7eb";
+    const symColor = TEAM_COLOR[e.team] ?? "#e5e7eb";
+    const teamPill = `<span class="pill ${e.team}">${e.team.toUpperCase()}</span>`;
     return `<div class="event">
       <strong style="color:${symColor}">${sym}</strong>
       <span>${e.type.toUpperCase()} @ ${formatTime(e.time)}</span>
@@ -218,7 +218,7 @@ function render() {
     </div>`;
   }).join("");
 
-  // possession path lines
+  // possession path lines (connect consecutive possession events; color by starting team's ownership)
   possessionLines.innerHTML = "";
   const chronological = [...state.events].reverse();
   const possPlaced = chronological.filter(ev => ev.type === "possession" && ev.xy);
@@ -240,9 +240,9 @@ function render() {
     possessionLines.appendChild(line);
   }
 
-  // markers
+  // markers (symbols; team-colored for all event types)
   markers.innerHTML = "";
-  const ordered = [...state.events].reverse();
+  const ordered = [...state.events].reverse(); // draw older first
   for (const e of ordered) {
     if (!e.xy) continue;
 
@@ -253,9 +253,7 @@ function render() {
     t.setAttribute("text-anchor", "middle");
     t.setAttribute("dominant-baseline", "middle");
     t.textContent = SYMBOL[e.type] ?? "?";
-
-    const fill = (e.type === "possession") ? (TEAM_COLOR[e.team] ?? "#e5e7eb") : "#e5e7eb";
-    t.setAttribute("fill", fill);
+    t.setAttribute("fill", TEAM_COLOR[e.team] ?? "#e5e7eb");
     markers.appendChild(t);
   }
 }
@@ -265,22 +263,19 @@ document.querySelectorAll(".grid button").forEach(btn => {
   btn.addEventListener("click", () => {
     const type = btn.dataset.type;
 
-    // capture the team at LOG TIME (not later)
-    const teamAtLog = (type === "possession") ? state.possessionTeam : null;
+    // Every event gets a team at LOG TIME (not later)
+    const teamAtLog = state.teamContext;
 
     const evt = { type, time: state.clockTenths, xy: null, team: teamAtLog };
     state.events.unshift(evt);
     state.pendingEvent = evt;
 
     hint.textContent = "Now tap the rink to place that event (optional).";
+    showToast(`${SYMBOL[type] ?? "?"} ${type.toUpperCase()} (${teamAtLog.toUpperCase()}) logged`);
 
-    if (type === "possession") {
-      showToast(`${SYMBOL[type]} POSSESSION (${teamAtLog.toUpperCase()}) logged`);
-      // IMPORTANT: auto-advance to the OTHER team for the next possession press
-      togglePossessionTeam(false);
-    } else {
-      showToast(`${SYMBOL[type]} ${type.toUpperCase()} logged`);
-    }
+    // Special behavior: POSSESSION represents a change-of-control point.
+    // After logging a possession event, auto-flip the team context for the NEXT events.
+    if (type === "possession") toggleTeamContext(false);
 
     render();
   });
@@ -300,14 +295,14 @@ rink.addEventListener("click", (e) => {
   state.pendingEvent.xy = { x, y };
   state.pendingEvent = null;
 
-  hint.textContent = "Tap an event button, then tap the rink to place it (optional).";
+  hint.textContent = "Tap an event, then tap the rink to place it (optional).";
   showToast("Placed");
   render();
 });
 
-/* ===== Possession team toggle (manual correction) ===== */
-document.getElementById("toggleTeam").addEventListener("click", () => togglePossessionTeam(true));
-possTeamPill.addEventListener("click", () => togglePossessionTeam(true));
+/* ===== Team context toggle (manual correction) ===== */
+document.getElementById("toggleTeam").addEventListener("click", () => toggleTeamContext(true));
+teamContextPill.addEventListener("click", () => toggleTeamContext(true));
 
 /* ===== Clock controls ===== */
 document.getElementById("startStop").addEventListener("click", () => {
@@ -331,7 +326,7 @@ document.getElementById("undo").addEventListener("click", () => {
 
 document.getElementById("clearPending").addEventListener("click", () => {
   state.pendingEvent = null;
-  hint.textContent = "Tap an event button, then tap the rink to place it (optional).";
+  hint.textContent = "Tap an event, then tap the rink to place it (optional).";
   showToast("Cleared pending placement");
   render();
 });
@@ -357,7 +352,7 @@ setInterval(() => {
 }, 100);
 
 /* init */
-updatePossessionUI();
+updateTeamUI();
 render();
 </script>
 
